@@ -1,0 +1,749 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Tournament Management API",
+        "description": "Tournament Management API for Android App. This API provides endpoints for managing tournaments, user authentication, and player interactions.",
+        "contact": {
+            "email": "support@example.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000",
+            "description": "API Server"
+        }
+    ],
+    "paths": {
+        "/api/register": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Register a new user",
+                "operationId": "8a56853624e025573120a09a4c75d468",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "mobile",
+                                    "password",
+                                    "role"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "mobile": {
+                                        "type": "string",
+                                        "example": "1234567890"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    },
+                                    "role": {
+                                        "type": "string",
+                                        "enum": [
+                                            "organizer",
+                                            "player"
+                                        ],
+                                        "example": "player"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "user": {
+                                            "type": "object"
+                                        },
+                                        "token": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/login": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Login user",
+                "operationId": "a3b306d14572d1f4bd6c064b3233e7b8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "password123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "user": {
+                                            "type": "object"
+                                        },
+                                        "token": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/logout": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Logout user",
+                "description": "REQUIRES: Authorization header with Bearer token. Format: 'Bearer {token}'. Example: 'Bearer 6|YuxRBo5pyMcpMOraGyRKfNZnqKsVuwQ7dG5jKu4Dab7b101f'",
+                "operationId": "fe8f3429cd6979b3b4517e186505f9f9",
+                "responses": {
+                    "200": {
+                        "description": "Logout successful"
+                    },
+                    "401": {
+                        "description": "Unauthenticated - Missing or invalid Bearer token"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/organizer/dashboard": {
+            "get": {
+                "tags": [
+                    "Organizer"
+                ],
+                "summary": "Get organizer dashboard data",
+                "description": "REQUIRES: Authorization header with Bearer token. Format: 'Bearer {token}'. Example: 'Bearer 6|YuxRBo5pyMcpMOraGyRKfNZnqKsVuwQ7dG5jKu4Dab7b101f'",
+                "operationId": "f17a17528f31a7f12e5f0a1914b4331a",
+                "responses": {
+                    "200": {
+                        "description": "Dashboard data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "tournaments": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "stats": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated - Missing or invalid Bearer token"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/organizer/tournaments": {
+            "get": {
+                "tags": [
+                    "Organizer"
+                ],
+                "summary": "List all tournaments for organizer",
+                "operationId": "d9ec984ceb3d2c8b08d40e49694184de",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by status",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "draft",
+                                "open",
+                                "active",
+                                "expired",
+                                "published"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of tournaments"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Organizer"
+                ],
+                "summary": "Create a new tournament",
+                "operationId": "98adc0975c6f70a14626cfafa22cec41",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "sports_category_id",
+                                    "team_name",
+                                    "location",
+                                    "start_date",
+                                    "winning_date",
+                                    "slot_count",
+                                    "rules",
+                                    "entry_fee"
+                                ],
+                                "properties": {
+                                    "sports_category_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "team_name": {
+                                        "type": "string",
+                                        "example": "Team Alpha"
+                                    },
+                                    "location": {
+                                        "type": "string",
+                                        "example": "Stadium A"
+                                    },
+                                    "location_details": {
+                                        "type": "string",
+                                        "example": "Near City Center"
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-02-01"
+                                    },
+                                    "winning_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-02-15"
+                                    },
+                                    "slot_count": {
+                                        "type": "integer",
+                                        "example": 16
+                                    },
+                                    "template": {
+                                        "type": "string",
+                                        "example": "Template details"
+                                    },
+                                    "rules": {
+                                        "type": "string",
+                                        "example": "Tournament rules"
+                                    },
+                                    "entry_fee": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100
+                                    },
+                                    "price_details": {
+                                        "type": "string",
+                                        "example": "Price breakdown"
+                                    },
+                                    "ball_type": {
+                                        "type": "string",
+                                        "example": "Football"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Tournament created successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/organizer/tournaments/{id}": {
+            "get": {
+                "tags": [
+                    "Organizer"
+                ],
+                "summary": "Get tournament details",
+                "operationId": "7405a95a8152cc70366905835e26f370",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tournament details"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Organizer"
+                ],
+                "summary": "Update tournament",
+                "operationId": "c41c08f0b942ef55b9427fc5d4e6d4cc",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Tournament updated successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/organizer/tournaments/{id}/publish": {
+            "post": {
+                "tags": [
+                    "Organizer"
+                ],
+                "summary": "Publish tournament",
+                "operationId": "9931a0954dfb6505a2f4f920a3a2d50a",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tournament published successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/player/dashboard": {
+            "get": {
+                "tags": [
+                    "Player"
+                ],
+                "summary": "Get player dashboard data",
+                "description": "REQUIRES: Authorization header with Bearer token. Format: 'Bearer {token}'. Example: 'Bearer 6|YuxRBo5pyMcpMOraGyRKfNZnqKsVuwQ7dG5jKu4Dab7b101f'",
+                "operationId": "0119bdffa2df355020c8e406823d0d60",
+                "responses": {
+                    "200": {
+                        "description": "Dashboard data"
+                    },
+                    "401": {
+                        "description": "Unauthenticated - Missing or invalid Bearer token"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/player/profile": {
+            "get": {
+                "tags": [
+                    "Player"
+                ],
+                "summary": "Get player profile",
+                "operationId": "80c5238026cbf9eae6449cb01cbcf89f",
+                "responses": {
+                    "200": {
+                        "description": "Player profile"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Player"
+                ],
+                "summary": "Update player profile",
+                "operationId": "f5565bea0358dd7d9929b998e65768c0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "mobile": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profile updated successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/player/tournaments": {
+            "get": {
+                "tags": [
+                    "Player"
+                ],
+                "summary": "List published tournaments",
+                "operationId": "a500cf3945fb3bd165fbae6435521eda",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "query",
+                        "description": "Filter by sports category",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of published tournaments"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/player/tournaments/{id}": {
+            "get": {
+                "tags": [
+                    "Player"
+                ],
+                "summary": "Get tournament basic details (location hidden)",
+                "operationId": "ba17d3c342c7d678b0a33020c4321e3e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tournament basic details"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/player/tournaments/{id}/interest": {
+            "post": {
+                "tags": [
+                    "Player"
+                ],
+                "summary": "Express interest in tournament",
+                "operationId": "f98483c6ea386a7d1f4bd352413ebdc1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Interest expressed successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/player/tournaments/{id}/subscribe": {
+            "post": {
+                "tags": [
+                    "Player"
+                ],
+                "summary": "Subscribe to tournament",
+                "operationId": "6a38dd99de8220ddc90ab2d3a6c8decd",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Subscription created successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/player/tournaments/{id}/details": {
+            "get": {
+                "tags": [
+                    "Player"
+                ],
+                "summary": "Get full tournament details (requires subscription)",
+                "operationId": "9f1e69eb64a4b25d28e886997b067106",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Full tournament details"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/player/subscriptions/{id}/pay": {
+            "post": {
+                "tags": [
+                    "Player"
+                ],
+                "summary": "Pay for subscription",
+                "operationId": "41d12c714249117464863dbac4938557",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "payment_method": {
+                                        "type": "string",
+                                        "example": "card"
+                                    },
+                                    "payment_details": {
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Payment processed successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/sports-categories": {
+            "get": {
+                "tags": [
+                    "Sports Categories"
+                ],
+                "summary": "List all sports categories",
+                "operationId": "c5822fcad37e28142a5aaa6e8f6e0e52",
+                "responses": {
+                    "200": {
+                        "description": "List of sports categories"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "sanctum": {
+                "type": "apiKey",
+                "description": "REQUIRED: Bearer token authentication. Format: \"Bearer {token}\". Example: \"Bearer 6|YuxRBo5pyMcpMOraGyRKfNZnqKsVuwQ7dG5jKu4Dab7b101f\". You MUST include the word \"Bearer\" followed by a space before your token.",
+                "name": "Authorization",
+                "in": "header"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Authentication",
+            "description": "User authentication endpoints"
+        },
+        {
+            "name": "Organizer",
+            "description": "Organizer dashboard and tournament management endpoints"
+        },
+        {
+            "name": "Player",
+            "description": "Player dashboard and tournament interaction endpoints"
+        },
+        {
+            "name": "Sports Categories",
+            "description": "Sports categories endpoints"
+        }
+    ]
+}
