@@ -171,6 +171,119 @@
                 ]
             }
         },
+        "/api/health": {
+            "get": {
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Health check endpoint",
+                "description": "Check if the API is running and database is accessible",
+                "operationId": "7134f626524ee8957bd6315b959ed4e1",
+                "responses": {
+                    "200": {
+                        "description": "API is healthy",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "healthy"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "example": "2026-02-05T06:30:00.000000Z"
+                                        },
+                                        "database": {
+                                            "type": "string",
+                                            "example": "connected"
+                                        },
+                                        "cache": {
+                                            "type": "string",
+                                            "example": "working"
+                                        },
+                                        "version": {
+                                            "type": "string",
+                                            "example": "1.0.0"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Service unavailable",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "unhealthy"
+                                        },
+                                        "timestamp": {
+                                            "type": "string"
+                                        },
+                                        "database": {
+                                            "type": "string",
+                                            "example": "disconnected"
+                                        },
+                                        "cache": {
+                                            "type": "string",
+                                            "example": "not working"
+                                        },
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/health/simple": {
+            "get": {
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Simple health check endpoint",
+                "description": "Simple health check that only returns API status without database checks",
+                "operationId": "2efba9be5cd0ab108078825dd5cc586d",
+                "responses": {
+                    "200": {
+                        "description": "API is running",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "ok"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "API is running"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "example": "2026-02-05T06:30:00.000000Z"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/organizer/dashboard": {
             "get": {
                 "tags": [
@@ -732,6 +845,10 @@
         {
             "name": "Authentication",
             "description": "User authentication endpoints"
+        },
+        {
+            "name": "Health",
+            "description": "API health check endpoints"
         },
         {
             "name": "Organizer",

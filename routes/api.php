@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OrganizerController;
 use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\SportsCategoryController;
+use App\Http\Controllers\HealthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,6 +20,8 @@ use App\Http\Controllers\SportsCategoryController;
 */
 
 // Public routes
+Route::get('/health', [HealthController::class, 'check']);
+Route::get('/health/simple', [HealthController::class, 'simple']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/sports-categories', [SportsCategoryController::class, 'index']);

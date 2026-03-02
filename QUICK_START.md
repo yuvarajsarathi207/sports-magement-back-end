@@ -1,62 +1,48 @@
-# Quick Start Guide
+# Quick Start Guide (Hostinger)
 
 ## Prerequisites
-- Docker and Docker Compose installed
+- PHP 8.1+ and Composer
 
 ## Setup Steps
 
-1. **Run the setup script:**
+1. **Copy environment and run the deployment script:**
    ```bash
-   ./manage.sh setup
+   cp .env.hostinger.example .env
+   # Edit .env with your DB credentials and APP_URL=https://keepplaying.in
+
+   chmod +x hostinger-deploy.sh
+   ./hostinger-deploy.sh
    ```
 
-   Or manually:
+   This installs dependencies, generates the app key, runs migrations, seeds the DB, generates Swagger docs, and caches config.
 
-2. **Copy environment file:**
-   ```bash
-   cp .env.example .env
-   ```
+2. **Point your domain’s document root** to the `public/` folder (see [DEPLOYMENT.md](DEPLOYMENT.md)).
 
-3. **Start Docker containers:**
-   ```bash
-   ./manage.sh build
-   ```
+## Local development (no server)
 
-4. **Install dependencies:**
-   ```bash
-   ./manage.sh composer install
-   ```
+```bash
+./hostinger-deploy.sh   # First-time setup
+php artisan serve       # API at http://localhost:8000
+```
 
-5. **Generate application key:**
-   ```bash
-   ./manage.sh artisan key:generate
-   ```
-
-6. **Run migrations:**
-   ```bash
-   ./manage.sh migrate
-   ```
-
-7. **Seed database:**
-   ```bash
-   ./manage.sh seed
-   ```
-
-8. **Generate Swagger docs:**
-   ```bash
-   ./manage.sh swagger
-   ```
-9. **
 ## Access Points
 
-- **API Base URL**: `http://localhost:8000/api`
-- **Swagger UI**: `http://localhost:8000/api/documentation`
+- **API Base URL**: `https://keepplaying.in/api` (or `http://localhost:8000/api` locally)
+- **Swagger UI**: `https://keepplaying.in/api/documentation`
+
+## After deploy – optional commands
+
+```bash
+./hostinger-deploy.sh migrate   # Run migrations only
+./hostinger-deploy.sh cache     # Rebuild caches
+./hostinger-deploy.sh swagger   # Regenerate API docs
+```
 
 ## Test the API
 
 ### Register a User
 ```bash
-curl -X POST http://localhost:8000/api/register \
+curl -X POST https://keepplaying.in/api/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "John Doe",
@@ -69,7 +55,7 @@ curl -X POST http://localhost:8000/api/register \
 
 ### Login
 ```bash
-curl -X POST http://localhost:8000/api/login \
+curl -X POST https://keepplaying.in/api/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "john@example.com",
@@ -79,7 +65,7 @@ curl -X POST http://localhost:8000/api/login \
 
 ### Create Tournament (as Organizer)
 ```bash
-curl -X POST http://localhost:8000/api/organizer/tournaments \
+curl -X POST https://keepplaying.in/api/organizer/tournaments \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
@@ -93,11 +79,3 @@ curl -X POST http://localhost:8000/api/organizer/tournaments \
     "entry_fee": 100.00
   }'
 ```
-
-## Common Commands
-
-- View logs: `docker-compose logs -f`
-- Stop containers: `docker-compose down`
-- Restart containers: `docker-compose restart`
-- Access database: `docker-compose exec db psql -U kp_user -d kp_tournament`
-

@@ -9,83 +9,55 @@ A Laravel-based REST API for managing tournaments, designed for Android mobile a
 - Player interactions (Express Interest, Subscribe, Payment)
 - Sports category management
 - Swagger/OpenAPI documentation
-- PostgreSQL database
-- Docker containerization
+- PostgreSQL or MySQL database
 
 ## Tech Stack
 
 - Laravel 10
-- PostgreSQL 15
-- Docker & Docker Compose
+- PostgreSQL or MySQL
 - Laravel Sanctum (API Authentication)
 - L5-Swagger (API Documentation)
 
 ## Prerequisites
 
-- Docker
-- Docker Compose
+- **PHP 8.1+** and **Composer**
 
-## Installation
+## Installation (Hostinger / no Docker)
 
-### Quick Setup (Recommended)
+1. Copy the environment file and set your database and `APP_URL`:
+   ```bash
+   cp .env.hostinger.example .env
+   # Edit .env with your DB credentials and https://keepplaying.in
+   ```
 
-Run the unified management script:
+2. Run the deployment script (full setup: install, key, permissions, migrate, seed, swagger, cache):
+   ```bash
+   chmod +x hostinger-deploy.sh
+   ./hostinger-deploy.sh
+   ```
+
+3. Point your domain’s **document root** to the `public/` folder. See **[DEPLOYMENT.md](DEPLOYMENT.md)** for Hostinger steps.
+
+**Local development** (no web server):
 
 ```bash
-./manage.sh setup
+php artisan serve
+# API: http://localhost:8000/api
+# Swagger: http://localhost:8000/api/documentation
 ```
 
-This will:
-- Configure `.env` file for Docker
-- Build and start Docker containers
-- Install dependencies
-- Generate application key
-- Fix permissions
-- Run migrations
-- Seed database
-- Generate Swagger documentation
+**After first deploy** you can run:
 
-### Manual Setup
-
-1. Copy the environment file:
 ```bash
-cp .env.example .env
-```
-
-2. Build and start the Docker containers:
-```bash
-docker-compose up -d --build
-```
-
-3. Install PHP dependencies:
-```bash
-./manage.sh composer install
-```
-
-4. Generate application key:
-```bash
-./manage.sh artisan key:generate
-```
-
-5. Run database migrations:
-```bash
-./manage.sh migrate
-```
-
-6. Seed the database:
-```bash
-./manage.sh seed
-```
-
-7. Generate Swagger documentation:
-```bash
-./manage.sh swagger
+./hostinger-deploy.sh migrate   # Run migrations only
+./hostinger-deploy.sh cache     # Rebuild caches
+./hostinger-deploy.sh swagger   # Regenerate API docs
 ```
 
 ## Access Points
 
-- **API Base URL**: `http://localhost:8000/api`
-- **Swagger Documentation**: `http://localhost:8000/api/documentation`
+- **API Base URL**: `https://keepplaying.in/api` (production) or `http://localhost:8000/api` (local)
+- **Swagger Documentation**: `https://keepplaying.in/api/documentation` or `http://localhost:8000/api/documentation`
 
 ## API Endpoints
 
@@ -136,85 +108,43 @@ docker-compose up -d --build
 ### Payments
 - id, subscription_id, tournament_id, player_id, amount, status (pending/completed/failed/refunded), payment_method, transaction_id, payment_details, timestamps
 
-## Management Script
+## Hostinger deployment script
 
-The project includes a unified management script (`manage.sh`) for common tasks:
-
-### Available Commands
+Single script for Hostinger (or any PHP host without Docker):
 
 ```bash
-./manage.sh setup          # Complete project setup (first time)
-./manage.sh start          # Start Docker containers
-./manage.sh stop           # Stop Docker containers
-./manage.sh restart        # Restart Docker containers
-./manage.sh build          # Build Docker containers
-./manage.sh env            # Update .env file with Docker config
-./manage.sh permissions    # Fix storage permissions
-./manage.sh cache          # Clear all Laravel caches
-./manage.sh swagger        # Fix and regenerate Swagger docs
-./manage.sh migrate        # Run database migrations
-./manage.sh seed           # Seed database
-./manage.sh logs           # Show application logs
-./manage.sh shell          # Open shell in app container
-./manage.sh composer [cmd] # Run composer command
-./manage.sh artisan [cmd]  # Run artisan command
-./manage.sh help           # Show help message
+./hostinger-deploy.sh          # Full setup (first deploy)
+./hostinger-deploy.sh migrate  # Run migrations only
+./hostinger-deploy.sh cache    # Clear and rebuild caches
+./hostinger-deploy.sh swagger  # Regenerate Swagger docs
 ```
 
-### Examples
-
-```bash
-# Setup project for first time
-./manage.sh setup
-
-# Run migrations
-./manage.sh migrate
-
-# Clear caches
-./manage.sh cache
-
-# Fix Swagger
-./manage.sh swagger
-
-# Run custom artisan command
-./manage.sh artisan route:list
-
-# Run custom composer command
-./manage.sh composer require package/name
-```
-
-### Docker Commands (Direct)
-
-If you prefer using docker-compose directly:
-
-- Start containers: `docker-compose up -d`
-- Stop containers: `docker-compose down`
-- View logs: `docker-compose logs -f app`
-- Execute commands: `docker-compose exec app <command>`
-- Database access: `docker-compose exec db psql -U kp_user -d kp_tournament`
+Run from the project root (where `artisan` lives). See **[DEPLOYMENT.md](DEPLOYMENT.md)** for full Hostinger steps.
 
 ## Development
 
 ### Running Migrations
 ```bash
-./manage.sh migrate
+php artisan migrate
 # or
-./manage.sh artisan migrate
+./hostinger-deploy.sh migrate
 ```
 
 ### Running Migrations with Rollback
 ```bash
-./manage.sh artisan migrate:rollback
+php artisan migrate:rollback
 ```
 
 ### Creating New Migrations
 ```bash
-./manage.sh artisan make:migration create_table_name
+php artisan make:migration create_table_name
 ```
 
 ### Generating Swagger Documentation
 ```bash
-./manage.sh swagger
+php artisan l5-swagger:generate
+# or
+./hostinger-deploy.sh swagger
 ```
 
 ## Testing
