@@ -13,9 +13,10 @@ This project runs as a standard Laravel PHP application, so it can be hosted on 
 
 **Option A – Use the deployment script (recommended)**
 
-From the project root (where `artisan` and `hostinger-deploy.sh` live):
+From the project folder on Hostinger (`public_html/sports-magement-back-end`):
 
 ```bash
+cd ~/public_html/sports-magement-back-end
 cp .env.hostinger.example .env
 # Edit .env with your DB credentials and APP_URL=https://keepplaying.in
 
@@ -52,25 +53,42 @@ DB_PASSWORD=your_database_password
 
 Create the database and user in **hPanel → Databases → MySQL Databases**, then run migrations (via SSH or one-time script).
 
-## 2. Upload to Hostinger
+## 2. Hostinger directory structure
 
-- Upload the full project (e.g. via **File Manager**, **FTP**, or **Git** if available).
-- Do **not** expose `.env` publicly; keep it outside the web root or ensure the server blocks access to `.env`.
+On Hostinger the project lives in a subfolder under `public_html`:
 
-## 3. Set document root to `public`
+```
+public_html/
+├── favicon.ico
+├── index.php
+├── robots.txt
+└── sports-magement-back-end/     ← Laravel project (API)
+    ├── app/
+    ├── bootstrap/
+    ├── config/
+    ├── database/
+    ├── public/                  ← document root must point here
+    │   ├── index.php
+    │   └── ...
+    ├── storage/
+    ├── vendor/
+    ├── .env
+    ├── artisan
+    ├── hostinger-deploy.sh
+    └── ...
+```
 
-Laravel must be served from the `public` folder so that `index.php` is the entry point and sensitive files (`.env`, `vendor`, etc.) are not under the web root.
+- **Project path**: `public_html/sports-magement-back-end`
+- **Document root** (in hPanel): `public_html/sports-magement-back-end/public`
 
-**Option A – Subdomain or addon domain**
+Upload the full Laravel project into `public_html/sports-magement-back-end/`. Do **not** expose `.env`; it stays inside the project folder (above `public/`), so it is not web-accessible.
 
-- In hPanel: **Domains → Your domain → Document root**
-- Set to: `public_html/your-project/public`  
-  (or the path where your project’s `public` folder lives).
+## 3. Set document root in hPanel
 
-**Option B – Main domain**
+1. In **hPanel → Domains → keepplaying.in → Document root**
+2. Set to: **`public_html/sports-magement-back-end/public`**
 
-- If the whole site is this Laravel app, set document root to: `public_html/public` (after moving the project so that `public` is inside `public_html`),  
-  or use a path like `public_html/kp_backend/public` if the project is in a subfolder.
+The site must be served from Laravel’s `public` folder so `index.php` is the entry point and `.env` / `vendor` are not under the web root.
 
 ## 4. Environment on Hostinger
 
@@ -107,10 +125,10 @@ If you don’t have SSH, use File Manager: right‑click `storage` and `bootstra
 If you use the Laravel scheduler, add a cron job in hPanel → **Advanced → Cron Jobs**:
 
 ```text
-* * * * * cd /path/to/your/project && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd ~/public_html/sports-magement-back-end && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-Replace `/path/to/your/project` with the full path to the project root (not `public`).
+Or use the full path Hostinger shows in the cron form (e.g. `/home/u468874340/public_html/sports-magement-back-end`).
 
 ## 7. Swagger / API docs
 
@@ -120,24 +138,69 @@ Replace `/path/to/your/project` with the full path to the project root (not `pub
 
 ## 8. Using the deployment script on the server
 
-If you have **SSH** access on Hostinger:
+SSH into Hostinger, then go to the project folder and run the script:
 
 ```bash
+cd ~/public_html/sports-magement-back-end
+chmod +x hostinger-deploy.sh
 ./hostinger-deploy.sh          # Full setup (first time)
+./hostinger-deploy.sh fix      # Fix 500 error (permissions + key + cache)
 ./hostinger-deploy.sh migrate  # Run migrations only
 ./hostinger-deploy.sh cache    # Clear and rebuild caches
 ./hostinger-deploy.sh swagger  # Regenerate API docs
 ```
 
-Without SSH, run the same `php artisan` and `composer` commands via Hostinger’s **PHP** or **Run Script** tools if available, or run the script locally and upload the project (including `storage/api-docs` if you generated Swagger).
+Without SSH, run the same `php artisan` and `composer` commands via Hostinger’s **PHP** or **Run Script** tools (from `sports-magement-back-end`), or run the script locally and upload the project (including `storage/api-docs` if you generated Swagger).
+
+## Troubleshooting 500 error
+
+If you see a **500 Internal Server Error**:
+
+### 1. Run the fix command (SSH)
+
+```bash
+cd ~/public_html/sports-magement-back-end
+./hostinger-deploy.sh fix
+```
+
+This sets permissions (777 on `storage` and `bootstrap/cache`), ensures `APP_KEY` exists, and clears/rebuilds caches.
+
+### 2. Check the Laravel log
+
+The real error is in the log file. Via SSH or File Manager:
+
+```bash
+tail -50 storage/logs/laravel.log
+```
+
+Or open `storage/logs/laravel.log` in File Manager and read the last entries.
+
+### 3. Common causes and fixes
+
+| Cause | Fix |
+|-------|-----|
+| **APP_KEY empty or missing** | Run `php artisan key:generate` or run `./hostinger-deploy.sh fix`. |
+| **Storage/bootstrap not writable** | `chmod -R 777 storage bootstrap/cache` or run `./hostinger-deploy.sh fix`. |
+| **.env not found** | Ensure `.env` exists in `sports-magement-back-end/` (same folder as `artisan`), not inside `public/`. |
+| **Wrong PHP version** | Laravel 10 needs PHP 8.1+. In hPanel set PHP version to 8.1 or 8.2. |
+| **Database connection** | Check `DB_*` in `.env` (from hPanel → MySQL). |
+| **Cached config wrong** | Run `php artisan config:clear` then `php artisan config:cache`. |
+
+### 4. See the error in the browser (temporarily)
+
+In `.env` set `APP_DEBUG=true`, reload the page to see the exception, then set `APP_DEBUG=false` again.
+
+### 5. Document root
+
+Confirm document root in hPanel is: **`public_html/sports-magement-back-end/public`** (must end with `/public`).
 
 ## Summary checklist
 
 - [ ] PHP 8.1+ selected in hPanel
 - [ ] Database (MySQL or PostgreSQL) created; `.env` updated with correct `DB_*`
-- [ ] Project uploaded; document root points to `public`
+- [ ] Project in `public_html/sports-magement-back-end`; document root is `public_html/sports-magement-back-end/public`
 - [ ] `.env` created and `APP_KEY` set; `APP_DEBUG=false`, `APP_ENV=production`
-- [ ] `storage` and `bootstrap/cache` writable (775)
+- [ ] `storage` and `bootstrap/cache` writable (775 or 777; run `./hostinger-deploy.sh fix` if 500)
 - [ ] Migrations run once
 - [ ] Config and route caches run: `php artisan config:cache` (and route/view cache if used)
 - [ ] API base URL: `https://keepplaying.in/api`  

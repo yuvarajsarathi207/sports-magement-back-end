@@ -5,8 +5,9 @@
 
 ## Setup Steps
 
-1. **Copy environment and run the deployment script:**
+1. **On Hostinger** (in `public_html/sports-magement-back-end`), copy env and run the script:
    ```bash
+   cd ~/public_html/sports-magement-back-end
    cp .env.hostinger.example .env
    # Edit .env with your DB credentials and APP_URL=https://keepplaying.in
 
@@ -16,7 +17,7 @@
 
    This installs dependencies, generates the app key, runs migrations, seeds the DB, generates Swagger docs, and caches config.
 
-2. **Point your domain’s document root** to the `public/` folder (see [DEPLOYMENT.md](DEPLOYMENT.md)).
+2. **In hPanel** set the domain document root to **`public_html/sports-magement-back-end/public`** (see [DEPLOYMENT.md](DEPLOYMENT.md)).
 
 ## Local development (no server)
 

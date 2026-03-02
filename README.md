@@ -36,7 +36,7 @@ A Laravel-based REST API for managing tournaments, designed for Android mobile a
    ./hostinger-deploy.sh
    ```
 
-3. Point your domain’s **document root** to the `public/` folder. See **[DEPLOYMENT.md](DEPLOYMENT.md)** for Hostinger steps.
+3. On Hostinger, set the domain **document root** to `public_html/sports-magement-back-end/public`. See **[DEPLOYMENT.md](DEPLOYMENT.md)** for full steps.
 
 **Local development** (no web server):
 

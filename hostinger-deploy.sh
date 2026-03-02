@@ -1,14 +1,16 @@
 #!/bin/bash
 #
 # Tournament Management API – Hostinger deployment script
-# Run this on the server (or locally before upload). No Docker required.
+# Run from project root (e.g. public_html/sports-magement-back-end on Hostinger).
+# No Docker required.
 #
 # chmod +x hostinger-deploy.sh
 # Usage:
 #   ./hostinger-deploy.sh          # Full setup (first deploy)
-#   ./hostinger-deploy.sh migrate   # Run migrations only
-#   ./hostinger-deploy.sh cache     # Clear and rebuild caches
-#   ./hostinger-deploy.sh swagger   # Regenerate API docs
+#   ./hostinger-deploy.sh fix      # Fix 500 error (permissions + cache + key)
+#   ./hostinger-deploy.sh migrate  # Run migrations only
+#   ./hostinger-deploy.sh cache    # Clear and rebuild caches
+#   ./hostinger-deploy.sh swagger  # Regenerate API docs
 #
 
 set -e
@@ -43,13 +45,48 @@ env_setup() {
     fi
 }
 
-# Storage and cache permissions
+# Storage and cache permissions (use 777 on shared hosting if 775 fails)
 permissions() {
     info "Setting storage/cache permissions..."
     mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views
     mkdir -p storage/logs storage/api-docs bootstrap/cache
-    chmod -R 775 storage bootstrap/cache 2>/dev/null || chmod -R 777 storage bootstrap/cache
+    chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+    chmod -R 777 storage bootstrap/cache 2>/dev/null || true
     ok "Permissions set"
+}
+
+# Fix 500 error: permissions, key, clear caches
+run_fix() {
+    echo "=========================================="
+    echo "  Fixing common 500 error causes"
+    echo "=========================================="
+    if [ ! -f ".env" ]; then
+        err ".env missing. Run: cp .env.hostinger.example .env && edit .env"
+        exit 1
+    fi
+    if ! grep -q "APP_KEY=base64:" .env 2>/dev/null; then
+        info "Generating APP_KEY..."
+        php artisan key:generate --force
+        ok "APP_KEY set"
+    fi
+    info "Setting permissions (777 for storage/bootstrap/cache on shared host)..."
+    chmod -R 777 storage bootstrap/cache 2>/dev/null || true
+    ok "Permissions set"
+    info "Clearing and rebuilding caches..."
+    php artisan config:clear 2>/dev/null || true
+    php artisan cache:clear 2>/dev/null || true
+    php artisan route:clear 2>/dev/null || true
+    php artisan view:clear 2>/dev/null || true
+    php artisan config:cache
+    php artisan route:cache 2>/dev/null || true
+    php artisan view:cache 2>/dev/null || true
+    ok "Caches rebuilt"
+    echo ""
+    ok "Done. If still 500, check the log:"
+    echo "  tail -50 storage/logs/laravel.log"
+    echo ""
+    echo "Or temporarily set in .env: APP_DEBUG=true (then reload and check browser for error; set back to false after.)"
+    echo ""
 }
 
 # Full setup (first deploy)
@@ -81,8 +118,11 @@ full_setup() {
     ok "Caches built"
     echo ""
     echo "=========================================="
-    ok "Deployment complete. Point document root to: public/"
+    ok "Deployment complete."
     echo "=========================================="
+    echo "  On Hostinger, set document root to:"
+    echo "  public_html/sports-magement-back-end/public"
+    echo ""
     echo "  API:        https://keepplaying.in/api"
     echo "  Swagger:    https://keepplaying.in/api/documentation"
     echo ""
@@ -113,14 +153,15 @@ run_swagger() {
 }
 
 case "${1:-}" in
-    migrate)  run_migrate ;;
-    cache)    run_cache ;;
-    swagger)  run_swagger ;;
-    "")       full_setup ;;
+    fix)     run_fix ;;
+    migrate) run_migrate ;;
+    cache)   run_cache ;;
+    swagger) run_swagger ;;
+    "")      full_setup ;;
     *)
         err "Unknown command: $1"
         echo ""
-        echo "Usage: ./hostinger-deploy.sh [migrate | cache | swagger]"
+        echo "Usage: ./hostinger-deploy.sh [fix | migrate | cache | swagger]"
         echo "  (no argument = full setup)"
         exit 1
         ;;
