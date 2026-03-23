@@ -94,13 +94,15 @@ class OrganizerController extends Controller
         }
 
         $query = Tournament::where('organizer_id', $user->id)
-            ->with(['sportsCategory', 'interests']);
+            ->with(['sportsCategory', 'interests.player'])
+            ->withCount('interests');
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
         }
 
         $tournaments = $query->latest()->get();
+
 
         return response()->json($tournaments);
     }
