@@ -52,6 +52,29 @@ check_php_extensions() {
 
 check_php_extensions
 
+# Frontend build (React / Vite) — required for /app
+check_frontend_build() {
+    if [ ! -f "public/build/manifest.json" ]; then
+        err "Missing public/build/manifest.json — run: npm install && npm run build"
+        echo ""
+        echo "  Upload the public/build/ folder to the server after building."
+        exit 1
+    fi
+    ok "Frontend build found (public/build/)"
+}
+
+build_frontend() {
+    if command -v npm >/dev/null 2>&1; then
+        info "Building frontend (npm run build)..."
+        npm ci --no-audit --no-fund 2>/dev/null || npm install --no-audit --no-fund
+        npm run build
+        ok "Frontend built"
+    else
+        info "npm not found — skip build; ensure public/build/ was uploaded"
+        check_frontend_build
+    fi
+}
+
 # Create/update .env from Hostinger example if missing
 env_setup() {
     if [ ! -f ".env" ]; then
@@ -117,6 +140,7 @@ full_setup() {
     echo "  Hostinger deployment – full setup"
     echo "=========================================="
     env_setup
+    build_frontend
     info "Installing dependencies..."
     composer install --no-dev --optimize-autoloader --no-interaction
     if ! grep -q "APP_KEY=base64:" .env 2>/dev/null; then
@@ -146,7 +170,10 @@ full_setup() {
     echo "  public_html/sports-magement-back-end/public"
     echo ""
     echo "  API:        https://keepplaying.in/api"
+    echo "  App:        https://keepplaying.in/app"
     echo "  Swagger:    https://keepplaying.in/api/documentation"
+    echo ""
+    echo "  Verify assets: https://keepplaying.in/build/manifest.json (must be 200, not 404)"
     echo ""
 }
 

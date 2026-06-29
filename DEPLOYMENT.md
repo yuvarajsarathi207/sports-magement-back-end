@@ -210,6 +210,27 @@ In `.env` set `APP_DEBUG=true`, reload the page to see the exception, then set `
 
 Confirm document root in hPanel is: **`public_html/sports-magement-back-end/public`** (must end with `/public`).
 
+### 6. White screen on `/app`
+
+The page title shows but the screen is blank because **JavaScript/CSS files return 404**.
+
+**Check in browser:** open `https://keepplaying.in/build/manifest.json` — it must return JSON, not 404.
+
+**Fix:**
+
+1. On your computer: `npm install && npm run build`
+2. Upload the entire **`public/build/`** folder to the server (`public_html/sports-magement-back-end/public/build/`)
+3. In hPanel set **document root** to `public_html/sports-magement-back-end/public` (not `public_html` alone)
+4. SSH: `php artisan view:clear && php artisan view:cache`
+
+**Wrong document root workaround** (not recommended): if the site must stay under a subfolder, set in `.env`:
+
+```env
+ASSET_URL=https://keepplaying.in/sports-magement-back-end/public
+```
+
+Then run `php artisan config:cache`. Prefer fixing the document root instead.
+
 ## Summary checklist
 
 - [ ] PHP 8.1+ selected in hPanel; **intl** extension enabled
