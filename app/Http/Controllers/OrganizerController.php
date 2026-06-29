@@ -6,6 +6,8 @@ use App\Models\Tournament;
 use App\Models\SportsCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\AdminController;
 
 /**
  * @OA\Tag(
@@ -56,14 +58,20 @@ class OrganizerController extends Controller
 
         $stats = [
             'total_tournaments' => $tournaments->count(),
-            'open_tournaments' => $tournaments->where('status', 'open')->count(),
-            'active_tournaments' => $tournaments->where('status', 'active')->count(),
-            'expired_tournaments' => $tournaments->where('status', 'expired')->count(),
+            'draft_tournaments' => $tournaments->where('status', 'draft')->count(),
+            'pending_approval' => $tournaments->where('status', 'pending_approval')->count(),
+            'published_tournaments' => $tournaments->where('status', 'published')->count(),
+            'rejected_tournaments' => $tournaments->where('status', 'rejected')->count(),
         ];
+
+        $categoryStats = SportsCategory::withCount([
+            'tournaments as tournament_count' => fn ($q) => $q->where('organizer_id', $user->id),
+        ])->get();
 
         return response()->json([
             'tournaments' => $tournaments,
             'stats' => $stats,
+            'category_stats' => $categoryStats,
         ]);
     }
 
@@ -99,6 +107,10 @@ class OrganizerController extends Controller
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
+        }
+
+        if ($request->has('category_id')) {
+            $query->where('sports_category_id', $request->category_id);
         }
 
         $tournaments = $query->latest()->get();
@@ -148,28 +160,43 @@ class OrganizerController extends Controller
         $request->validate([
             'sports_category_id' => 'required|exists:sports_categories,id',
             'team_name' => 'required|string|max:255',
-            'location' => 'required|string|max:255',
+            'location' => 'nullable|string|max:255',
+            'state' => 'required|string|max:255',
+            'city' => 'required|string|max:255',
+            'district' => 'required|string|max:255',
+            'pincode' => 'required|string|regex:/^[0-9]{6}$/',
             'location_details' => 'nullable|string',
             'start_date' => 'required|date',
             'winning_date' => 'required|date|after:start_date',
             'slot_count' => 'required|integer|min:1',
             'template' => 'nullable|string',
+            'template_file' => 'required_without:template|nullable|file|mimes:pdf,doc,docx,png,jpg,jpeg|max:10240',
             'rules' => 'required|string',
             'entry_fee' => 'required|numeric|min:0',
             'price_details' => 'nullable|string',
             'ball_type' => 'nullable|string|max:255',
         ]);
 
+        $template = $request->template;
+        if ($request->hasFile('template_file')) {
+            $path = $request->file('template_file')->store('tournament-templates', 'public');
+            $template = Storage::url($path);
+        }
+
         $tournament = Tournament::create([
             'organizer_id' => $user->id,
             'sports_category_id' => $request->sports_category_id,
             'team_name' => $request->team_name,
-            'location' => $request->location,
+            'location' => $request->location ?: $this->composeLocation($request),
+            'state' => $request->state,
+            'city' => $request->city,
+            'district' => $request->district,
+            'pincode' => $request->pincode,
             'location_details' => $request->location_details,
             'start_date' => $request->start_date,
             'winning_date' => $request->winning_date,
             'slot_count' => $request->slot_count,
-            'template' => $request->template,
+            'template' => $template,
             'rules' => $request->rules,
             'entry_fee' => $request->entry_fee,
             'price_details' => $request->price_details,
@@ -257,6 +284,10 @@ class OrganizerController extends Controller
             'sports_category_id' => 'sometimes|exists:sports_categories,id',
             'team_name' => 'sometimes|string|max:255',
             'location' => 'sometimes|string|max:255',
+            'state' => 'sometimes|string|max:255',
+            'city' => 'sometimes|string|max:255',
+            'district' => 'sometimes|string|max:255',
+            'pincode' => 'sometimes|string|regex:/^[0-9]{6}$/',
             'location_details' => 'nullable|string',
             'start_date' => 'sometimes|date',
             'winning_date' => 'sometimes|date|after:start_date',
@@ -266,7 +297,7 @@ class OrganizerController extends Controller
             'entry_fee' => 'sometimes|numeric|min:0',
             'price_details' => 'nullable|string',
             'ball_type' => 'nullable|string|max:255',
-            'status' => 'sometimes|in:draft,open,active,expired,published',
+            'status' => 'sometimes|in:draft,pending_approval,published,rejected',
         ]);
 
         $tournament->update($request->all());
@@ -304,12 +335,43 @@ class OrganizerController extends Controller
             ->where('organizer_id', $user->id)
             ->firstOrFail();
 
+        if (!in_array($tournament->status, ['draft', 'rejected'])) {
+            return response()->json([
+                'message' => 'Only draft or rejected tournaments can be submitted for approval.',
+            ], 400);
+        }
+
         $tournament->update([
-            'status' => 'published',
-            'is_published' => true,
+            'status' => 'pending_approval',
+            'is_published' => false,
+            'rejection_reason' => null,
+            'approved_by' => null,
+            'approved_at' => null,
         ]);
 
-        return response()->json($tournament);
+        AdminController::notifyAdmins($tournament->load(['sportsCategory', 'organizer']));
+
+        return response()->json([
+            'message' => 'Tournament submitted for admin approval. You will be notified once reviewed.',
+            'tournament' => $tournament,
+        ]);
+    }
+
+    private function composeLocation(Request $request): string
+    {
+        $parts = array_filter([
+            $request->city,
+            $request->district,
+            $request->state,
+        ]);
+
+        $location = implode(', ', $parts);
+
+        if ($request->pincode) {
+            $location = $location ? "{$location} - {$request->pincode}" : $request->pincode;
+        }
+
+        return $location;
     }
 }
 

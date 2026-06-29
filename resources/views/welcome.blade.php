@@ -154,6 +154,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#contact">Contact</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link fw-semibold text-primary" href="/app">Open App</a>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -167,11 +170,11 @@
                     <h1 class="display-4 fw-bold mb-4">Tournament & Player Management Platform</h1>
                     <p class="lead mb-4">Manage tournaments, track players, view live scores, and stay updated with rankings. Join thousands of players competing in exciting tournaments.</p>
                     <div class="d-flex flex-wrap gap-3">
-                        <a href="#contact" class="btn btn-primary btn-lg">
-                            <i class="bi bi-person-plus me-2"></i>Register Now
+                        <a href="/app" class="btn btn-primary btn-lg">
+                            <i class="bi bi-phone me-2"></i>Open App
                         </a>
-                        <a href="#features" class="btn btn-outline-light btn-lg">
-                            <i class="bi bi-info-circle me-2"></i>Learn More
+                        <a href="/app/register" class="btn btn-outline-light btn-lg">
+                            <i class="bi bi-person-plus me-2"></i>Register
                         </a>
                     </div>
                 </div>
@@ -183,6 +186,7 @@
             </div>
         </div>
     </section>
+
 
     <!-- Features Section -->
     <section id="features" class="section-padding">
@@ -247,7 +251,8 @@
                         </div>
                     </div>
                 </div>
-                {{-- <div class="col-md-6 col-lg-4">
+
+                {{-- <div class="col-md-6 col-lg-4">and
                     <div class="card service-card shadow-sm">
                         <div class="card-body text-center p-4">
                             <div class="service-icon">

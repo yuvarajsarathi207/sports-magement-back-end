@@ -30,6 +30,28 @@ if [ ! -f "artisan" ]; then
     exit 1
 fi
 
+# Required PHP extensions (Composer / Laravel / Symfony need intl for Normalizer)
+check_php_extensions() {
+    local missing=()
+    for ext in intl mbstring openssl pdo tokenizer xml ctype json bcmath fileinfo; do
+        if ! php -m 2>/dev/null | grep -qi "^${ext}$"; then
+            missing+=("$ext")
+        fi
+    done
+    if [ ${#missing[@]} -gt 0 ]; then
+        err "Missing PHP extensions: ${missing[*]}"
+        echo ""
+        echo "  Hostinger: hPanel → Advanced → PHP Configuration → enable: ${missing[*]}"
+        echo "  Ubuntu:    sudo apt install php-intl php-mbstring php-xml php-bcmath"
+        echo ""
+        echo "  The 'intl' extension provides Normalizer (required by Composer)."
+        exit 1
+    fi
+    ok "PHP extensions OK ($(php -r 'echo PHP_VERSION;'))"
+}
+
+check_php_extensions
+
 # Create/update .env from Hostinger example if missing
 env_setup() {
     if [ ! -f ".env" ]; then

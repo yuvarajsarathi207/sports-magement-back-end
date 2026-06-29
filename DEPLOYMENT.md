@@ -5,9 +5,24 @@ This project runs as a standard Laravel PHP application, so it can be hosted on 
 ## Requirements
 
 - **PHP** 8.1 or higher (Hostinger supports multiple PHP versions in hPanel)
+- **PHP extensions** (enable in hPanel → Advanced → PHP Configuration):
+  - **intl** (required — provides `Normalizer`; Composer/Symfony fail without it)
+  - mbstring, openssl, pdo, tokenizer, xml, ctype, json, bcmath, fileinfo
 - **Composer** (run locally or via SSH if your plan allows)
 - **Database**: MySQL or PostgreSQL (Hostinger shared often provides MySQL; VPS/Business may offer PostgreSQL)
 - **Web server**: Apache with `mod_rewrite` (default on Hostinger)
+
+### Fix: `Class "Normalizer" not found`
+
+This means the **intl** PHP extension is disabled. On Hostinger:
+
+1. **hPanel → Advanced → PHP Configuration** (or **Select PHP Version**)
+2. Enable **intl**
+3. Save and wait a minute for PHP to reload
+4. Verify over SSH: `php -m | grep intl`
+5. Re-run deploy: `./hostinger-deploy.sh`
+
+On Ubuntu/VPS: `sudo apt install php8.2-intl` (match your PHP version), then `sudo systemctl restart php8.2-fpm` or Apache.
 
 ## 1. Prepare and deploy
 
@@ -183,6 +198,7 @@ Or open `storage/logs/laravel.log` in File Manager and read the last entries.
 | **Storage/bootstrap not writable** | `chmod -R 777 storage bootstrap/cache` or run `./hostinger-deploy.sh fix`. |
 | **.env not found** | Ensure `.env` exists in `sports-magement-back-end/` (same folder as `artisan`), not inside `public/`. |
 | **Wrong PHP version** | Laravel 10 needs PHP 8.1+. In hPanel set PHP version to 8.1 or 8.2. |
+| **`Normalizer` not found** | Enable the **intl** PHP extension in hPanel → PHP Configuration. |
 | **Database connection** | Check `DB_*` in `.env` (from hPanel → MySQL). |
 | **Cached config wrong** | Run `php artisan config:clear` then `php artisan config:cache`. |
 
@@ -196,7 +212,7 @@ Confirm document root in hPanel is: **`public_html/sports-magement-back-end/publ
 
 ## Summary checklist
 
-- [ ] PHP 8.1+ selected in hPanel
+- [ ] PHP 8.1+ selected in hPanel; **intl** extension enabled
 - [ ] Database (MySQL or PostgreSQL) created; `.env` updated with correct `DB_*`
 - [ ] Project in `public_html/sports-magement-back-end`; document root is `public_html/sports-magement-back-end/public`
 - [ ] `.env` created and `APP_KEY` set; `APP_DEBUG=false`, `APP_ENV=production`

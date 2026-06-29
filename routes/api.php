@@ -7,6 +7,7 @@ use App\Http\Controllers\OrganizerController;
 use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\SportsCategoryController;
 use App\Http\Controllers\HealthController;
+use App\Http\Controllers\AdminController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,6 +33,16 @@ Route::get('/sports-categories', [SportsCategoryController::class, 'index']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/test-auth', action: [\App\Http\Controllers\TestController::class, 'testAuth']);
+
+    // Admin routes
+    Route::prefix('admin')->group(function () {
+        Route::get('/dashboard', [AdminController::class, 'dashboard']);
+        Route::get('/tournaments', [AdminController::class, 'listTournaments']);
+        Route::get('/tournaments/{id}', [AdminController::class, 'viewTournament']);
+        Route::post('/tournaments/{id}/approve', [AdminController::class, 'approveTournament']);
+        Route::post('/tournaments/{id}/reject', [AdminController::class, 'rejectTournament']);
+        Route::post('/tournaments/{id}/unpublish', [AdminController::class, 'unpublishTournament']);
+    });
 
     // Organizer routes
     Route::prefix('organizer')->group(function () {

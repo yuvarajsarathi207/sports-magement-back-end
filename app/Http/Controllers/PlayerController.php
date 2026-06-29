@@ -6,6 +6,7 @@ use App\Models\Tournament;
 use App\Models\TournamentInterest;
 use App\Models\Subscription;
 use App\Models\Payment;
+use App\Models\SportsCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -51,16 +52,36 @@ class PlayerController extends Controller
         $subscriptions = Subscription::where('player_id', $user->id)
             ->with(['tournament.sportsCategory'])
             ->latest()
-            ->get();
+            ->get()
+            ->map(function ($subscription) {
+                if ($subscription->tournament && $subscription->status !== 'active') {
+                    $this->hideLocationFields($subscription->tournament);
+                }
+                return $subscription;
+            });
+
+        $subscribedTournamentIds = Subscription::where('player_id', $user->id)->pluck('tournament_id');
 
         $interests = TournamentInterest::where('player_id', $user->id)
+            ->whereNotIn('tournament_id', $subscribedTournamentIds)
             ->with(['tournament.sportsCategory'])
             ->latest()
-            ->get();
+            ->get()
+            ->map(function ($interest) {
+                if ($interest->tournament) {
+                    $this->hideLocationFields($interest->tournament);
+                }
+                return $interest;
+            });
+
+        $categoryStats = SportsCategory::withCount([
+            'tournaments as published_count' => fn ($q) => $q->publishedForPlayers(),
+        ])->get();
 
         return response()->json([
             'subscriptions' => $subscriptions,
             'interests' => $interests,
+            'category_stats' => $categoryStats,
         ]);
     }
 
@@ -150,8 +171,7 @@ class PlayerController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $query = Tournament::where('is_published', true)
-            ->where('status', 'published')
+        $query = Tournament::publishedForPlayers()
             ->with(['sportsCategory']);
 
         if ($request->has('category_id')) {
@@ -160,10 +180,8 @@ class PlayerController extends Controller
 
         $tournaments = $query->latest()->get();
 
-        // Hide main location details for basic view
         $tournaments = $tournaments->map(function ($tournament) {
-            $tournament->location_details = null; // Hide location details in list
-            return $tournament;
+            return $this->hideLocationFields($tournament);
         });
 
         return response()->json($tournaments);
@@ -195,15 +213,12 @@ class PlayerController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $tournament = Tournament::where('id', $id)
-            ->where('is_published', true)
+        $tournament = Tournament::publishedForPlayers()
+            ->where('id', $id)
             ->with(['sportsCategory'])
             ->firstOrFail();
 
-        // Hide location details
-        $tournament->location_details = null;
-
-        return response()->json($tournament);
+        return response()->json($this->hideLocationFields($tournament));
     }
 
     /**
@@ -232,8 +247,8 @@ class PlayerController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $tournament = Tournament::where('id', $id)
-            ->where('is_published', true)
+        $tournament = Tournament::publishedForPlayers()
+            ->where('id', $id)
             ->firstOrFail();
 
         $existingInterest = TournamentInterest::where('tournament_id', $id)
@@ -278,8 +293,8 @@ class PlayerController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $tournament = Tournament::where('id', $id)
-            ->where('is_published', true)
+        $tournament = Tournament::publishedForPlayers()
+            ->where('id', $id)
             ->firstOrFail();
 
         $existingSubscription = Subscription::where('tournament_id', $id)
@@ -331,6 +346,10 @@ class PlayerController extends Controller
 
         if (!$subscription) {
             return response()->json(['message' => 'Subscription required'], 403);
+        }
+
+        if ($subscription->status !== 'active') {
+            return response()->json(['message' => 'Payment required to view location details'], 403);
         }
 
         $tournament = Tournament::where('id', $id)
@@ -396,7 +415,23 @@ class PlayerController extends Controller
 
         $subscription->update(['status' => 'active']);
 
+        TournamentInterest::where('tournament_id', $subscription->tournament_id)
+            ->where('player_id', $user->id)
+            ->delete();
+
         return response()->json($payment, 201);
+    }
+
+    private function hideLocationFields(Tournament $tournament): Tournament
+    {
+        $tournament->location = null;
+        $tournament->location_details = null;
+        $tournament->city = null;
+        $tournament->state = null;
+        $tournament->district = null;
+        $tournament->pincode = null;
+
+        return $tournament;
     }
 }
 
