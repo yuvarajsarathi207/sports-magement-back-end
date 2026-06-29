@@ -61,6 +61,11 @@ check_frontend_build() {
         exit 1
     fi
     ok "Frontend build found (public/build/)"
+    if [ ! -f "public/manifest.webmanifest" ] || [ ! -f "public/sw.js" ]; then
+        err "Missing PWA files (public/manifest.webmanifest or public/sw.js)"
+        exit 1
+    fi
+    ok "PWA assets found (manifest + service worker)"
 }
 
 build_frontend() {

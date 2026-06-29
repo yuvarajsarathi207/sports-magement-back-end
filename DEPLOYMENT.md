@@ -101,7 +101,7 @@ Upload the full Laravel project into `public_html/sports-magement-back-end/`. Do
 ## 3. Set document root in hPanel
 
 1. In **hPanel → Domains → keepplaying.in → Document root**
-2. Set to: **`public_html/sports-magement-back-end/public`**
+2. Set to: `**public_html/sports-magement-back-end/public`**
 
 The site must be served from Laravel’s `public` folder so `index.php` is the entry point and `.env` / `vendor` are not under the web root.
 
@@ -109,14 +109,16 @@ The site must be served from Laravel’s `public` folder so `index.php` is the e
 
 Use `.env.hostinger.example` as a template. Important variables:
 
-| Variable       | Example / note |
-|----------------|----------------|
-| `APP_ENV`      | `production`   |
-| `APP_DEBUG`    | `false`        |
-| `APP_URL`      | `https://keepplaying.in` |
-| `APP_KEY`      | Generate with `php artisan key:generate` (once) |
-| `DB_*`         | From hPanel → Databases (MySQL or PostgreSQL) |
+
+| Variable                | Example / note                                              |
+| ----------------------- | ----------------------------------------------------------- |
+| `APP_ENV`               | `production`                                                |
+| `APP_DEBUG`             | `false`                                                     |
+| `APP_URL`               | `https://keepplaying.in`                                    |
+| `APP_KEY`               | Generate with `php artisan key:generate` (once)             |
+| `DB_*`                  | From hPanel → Databases (MySQL or PostgreSQL)               |
 | `L5_SWAGGER_CONST_HOST` | `https://keepplaying.in` (so Swagger UI points to your API) |
+
 
 After changing `.env`, run (if you have SSH):
 
@@ -148,7 +150,7 @@ Or use the full path Hostinger shows in the cron form (e.g. `/home/u468874340/pu
 ## 7. Swagger / API docs
 
 - In production, you can set `L5_SWAGGER_GENERATE_ALWAYS=false` and generate the docs once after deploy:
-  `php artisan l5-swagger:generate`
+`php artisan l5-swagger:generate`
 - Ensure `storage/api-docs` is writable so the generated JSON can be saved.
 
 ## 8. Using the deployment script on the server
@@ -192,15 +194,17 @@ Or open `storage/logs/laravel.log` in File Manager and read the last entries.
 
 ### 3. Common causes and fixes
 
-| Cause | Fix |
-|-------|-----|
-| **APP_KEY empty or missing** | Run `php artisan key:generate` or run `./hostinger-deploy.sh fix`. |
-| **Storage/bootstrap not writable** | `chmod -R 777 storage bootstrap/cache` or run `./hostinger-deploy.sh fix`. |
-| **.env not found** | Ensure `.env` exists in `sports-magement-back-end/` (same folder as `artisan`), not inside `public/`. |
-| **Wrong PHP version** | Laravel 10 needs PHP 8.1+. In hPanel set PHP version to 8.1 or 8.2. |
-| **`Normalizer` not found** | Enable the **intl** PHP extension in hPanel → PHP Configuration. |
-| **Database connection** | Check `DB_*` in `.env` (from hPanel → MySQL). |
-| **Cached config wrong** | Run `php artisan config:clear` then `php artisan config:cache`. |
+
+| Cause                              | Fix                                                                                                   |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **APP_KEY empty or missing**       | Run `php artisan key:generate` or run `./hostinger-deploy.sh fix`.                                    |
+| **Storage/bootstrap not writable** | `chmod -R 777 storage bootstrap/cache` or run `./hostinger-deploy.sh fix`.                            |
+| **.env not found**                 | Ensure `.env` exists in `sports-magement-back-end/` (same folder as `artisan`), not inside `public/`. |
+| **Wrong PHP version**              | Laravel 10 needs PHP 8.1+. In hPanel set PHP version to 8.1 or 8.2.                                   |
+| `**Normalizer` not found**         | Enable the **intl** PHP extension in hPanel → PHP Configuration.                                      |
+| **Database connection**            | Check `DB_*` in `.env` (from hPanel → MySQL).                                                         |
+| **Cached config wrong**            | Run `php artisan config:clear` then `php artisan config:cache`.                                       |
+
 
 ### 4. See the error in the browser (temporarily)
 
@@ -208,7 +212,7 @@ In `.env` set `APP_DEBUG=true`, reload the page to see the exception, then set `
 
 ### 5. Document root
 
-Confirm document root in hPanel is: **`public_html/sports-magement-back-end/public`** (must end with `/public`).
+Confirm document root in hPanel is: `**public_html/sports-magement-back-end/public`** (must end with `/public`).
 
 ### 6. White screen on `/app`
 
@@ -219,7 +223,7 @@ The page title shows but the screen is blank because **JavaScript/CSS files retu
 **Fix:**
 
 1. On your computer: `npm install && npm run build`
-2. Upload the entire **`public/build/`** folder to the server (`public_html/sports-magement-back-end/public/build/`)
+2. Upload the entire `**public/build/`** folder to the server (`public_html/sports-magement-back-end/public/build/`)
 3. In hPanel set **document root** to `public_html/sports-magement-back-end/public` (not `public_html` alone)
 4. SSH: `php artisan view:clear && php artisan view:cache`
 
@@ -234,7 +238,7 @@ Then run `php artisan config:cache`. Prefer fixing the document root instead.
 ## Summary checklist
 
 - [ ] PHP 8.1+ selected in hPanel; **intl** extension enabled
-- [ ] Database (MySQL or PostgreSQL) created; `.env` updated with correct `DB_*`
+- [ ] Database (MySQL or PostgreSQL) created; `.env` updated with correct `DB_`*
 - [ ] Project in `public_html/sports-magement-back-end`; document root is `public_html/sports-magement-back-end/public`
 - [ ] `.env` created and `APP_KEY` set; `APP_DEBUG=false`, `APP_ENV=production`
 - [ ] `storage` and `bootstrap/cache` writable (775 or 777; run `./hostinger-deploy.sh fix` if 500)
@@ -249,3 +253,4 @@ For local development:
 ./hostinger-deploy.sh   # Full setup (run once in project root)
 php artisan serve       # Starts PHP built-in server at http://localhost:8000
 ```
+

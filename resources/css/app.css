@@ -1689,3 +1689,58 @@ body {
         grid-template-columns: repeat(4, 1fr);
     }
 }
+
+/* PWA install prompt */
+.install-prompt {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(var(--nav-height) + var(--safe-bottom) + 12px);
+    z-index: 200;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 14px;
+    animation: slideUp 0.3s ease;
+}
+
+.install-prompt-body {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.install-prompt-icon {
+    font-size: 28px;
+    line-height: 1;
+}
+
+.install-prompt-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.install-prompt-text {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.install-prompt-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
