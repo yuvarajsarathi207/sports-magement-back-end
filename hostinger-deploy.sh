@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Tournament Management API – Hostinger deployment script
+# Keep Playing – Hostinger deployment script
 # Run from project root (e.g. public_html/sports-magement-back-end on Hostinger).
 # No Docker required.
 #

@@ -34,7 +34,7 @@ export default function Login() {
             <div className="auth-card">
                 <div className="auth-brand">
                     <span className="brand-icon">🏆</span>
-                    <h1>Tournament Hub</h1>
+                    <h1>Keep Playing</h1>
                     <p>Sign in to manage tournaments & play</p>
                 </div>
 

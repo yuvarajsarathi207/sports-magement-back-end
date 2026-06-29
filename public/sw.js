@@ -1,10 +1,13 @@
-const CACHE = 'tournament-hub-v2';
-const PRECACHE = ['/app/', '/icons/icon-192.png', '/icons/icon-512.png'];
+const CACHE = 'tournament-hub-v3';
+
+const ASSET_PATHS = ['/build/', '/icons/'];
+
+function isAssetRequest(url) {
+    return ASSET_PATHS.some((prefix) => url.pathname.startsWith(prefix));
+}
 
 self.addEventListener('install', (event) => {
-    event.waitUntil(
-        caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting())
-    );
+    self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -17,26 +20,31 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
     const { request } = event;
-    const url = new URL(request.url);
 
     if (request.method !== 'GET') return;
 
-    // API: network only
+    // Never intercept page loads — installed PWA must fetch /app/ from network
+    if (request.mode === 'navigate') return;
+
+    const url = new URL(request.url);
+
     if (url.pathname.startsWith('/api')) return;
 
-    // App shell + static assets: stale-while-revalidate
-    if (url.pathname.startsWith('/app') || url.pathname.startsWith('/build') || url.pathname.startsWith('/icons')) {
-        event.respondWith(
-            caches.open(CACHE).then(async (cache) => {
-                const cached = await cache.match(request);
-                const network = fetch(request)
-                    .then((response) => {
-                        if (response.ok) cache.put(request, response.clone());
-                        return response;
-                    })
-                    .catch(() => cached);
-                return cached || network;
-            })
-        );
-    }
+    if (!isAssetRequest(url)) return;
+
+    event.respondWith(
+        caches.open(CACHE).then(async (cache) => {
+            const cached = await cache.match(request);
+            try {
+                const response = await fetch(request);
+                if (response.ok) {
+                    cache.put(request, response.clone());
+                }
+                return response;
+            } catch (err) {
+                if (cached) return cached;
+                throw err;
+            }
+        })
+    );
 });

@@ -23,8 +23,8 @@ class PublicAssetController extends Controller
     {
         return response()->json([
             'id' => '/',
-            'name' => 'Tournament Hub',
-            'short_name' => 'Tournaments',
+            'name' => 'Keep Playing',
+            'short_name' => 'Keep Playing',
             'description' => 'Browse, join, and manage sports tournaments',
             'start_url' => '/app/',
             'scope' => '/',

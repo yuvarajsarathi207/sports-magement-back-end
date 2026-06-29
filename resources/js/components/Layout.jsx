@@ -29,7 +29,7 @@ export default function Layout({ role }) {
             <header className="app-header">
                 <div className="header-inner">
                     <div>
-                        <p className="header-eyebrow">Tournament Hub</p>
+                        <p className="header-eyebrow">Keep Playing</p>
                         <h1 className="header-title">Hi, {user?.name?.split(' ')[0]}</h1>
                     </div>
                     <ProfileMenu role={role} />

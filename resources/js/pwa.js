@@ -1,11 +1,13 @@
 export function registerPwa() {
     if (!('serviceWorker' in navigator)) return;
 
-    window.addEventListener('load', () => {
-        navigator.serviceWorker
-            .register('/sw.js', { scope: '/' })
-            .catch(() => {
-                // SW registration failed (e.g. localhost without HTTPS in some browsers)
-            });
+    window.addEventListener('load', async () => {
+        try {
+            const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+            // Force update so installed PWA picks up fixed service worker
+            reg.update();
+        } catch {
+            // Registration failed
+        }
     });
 }

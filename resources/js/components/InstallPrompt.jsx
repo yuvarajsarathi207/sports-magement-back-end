@@ -67,7 +67,7 @@ export default function InstallPrompt() {
 
     const copy = {
         native: {
-            title: 'Install Tournament Hub',
+            title: 'Install Keep Playing',
             text: 'Add to your home screen for quick access',
         },
         ios: {
@@ -75,11 +75,11 @@ export default function InstallPrompt() {
             text: 'Tap Share (↑) in Safari, then choose “Add to Home Screen”',
         },
         android: {
-            title: 'Install Tournament Hub',
+            title: 'Install Keep Playing',
             text: 'Tap browser menu (⋮) → “Install app” or “Add to Home screen”',
         },
         desktop: {
-            title: 'Install Tournament Hub',
+            title: 'Install Keep Playing',
             text: 'Use the install icon in your browser address bar, or browser menu',
         },
     }[mode];

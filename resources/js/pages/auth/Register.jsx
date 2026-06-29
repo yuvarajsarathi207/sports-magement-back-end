@@ -41,7 +41,7 @@ export default function Register() {
             <div className="auth-card">
                 <div className="auth-brand">
                     <span className="brand-icon">🏆</span>
-                    <h1>Join Tournament Hub</h1>
+                    <h1>Join Keep Playing</h1>
                     <p>Register as a player or organizer</p>
                 </div>
 

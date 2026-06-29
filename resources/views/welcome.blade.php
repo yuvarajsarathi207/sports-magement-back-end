@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tournament Hub - Player & Tournament Management Platform</title>
+    <title>Keep Playing - Player & Tournament Management Platform</title>
 
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -135,7 +135,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-white fixed-top">
         <div class="container">
             <a class="navbar-brand fw-bold" href="#home">
-                <i class="bi bi-trophy"></i> Tournament Hub
+                <i class="bi bi-trophy"></i> Keep Playing
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -272,7 +272,7 @@
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-6 mb-5 mb-lg-0">
-                    <h2 class="display-5 fw-bold mb-4">About Tournament Hub</h2>
+                    <h2 class="display-5 fw-bold mb-4">About Keep Playing</h2>
                     <p class="lead mb-4">We are the premier platform for tournament management and player tracking, connecting athletes and organizers worldwide.</p>
                     <p class="mb-4">Our platform makes it easy to organize tournaments, track player performance, and engage with the competitive sports community. Join thousands of players and organizers who trust us for their tournament needs.</p>
                     <div class="row g-4 mt-3">
@@ -404,7 +404,7 @@
             <div class="row">
                 <div class="col-lg-4 mb-4 mb-lg-0">
                     <h5 class="fw-bold mb-3">
-                        <i class="bi bi-trophy me-2"></i>Tournament Hub
+                        <i class="bi bi-trophy me-2"></i>Keep Playing
                     </h5>
                     <p class="text-muted">The premier platform for tournament management and player tracking. Connect, compete, and excel.</p>
                 </div>
@@ -447,7 +447,7 @@
             <hr class="my-4 bg-secondary">
             <div class="row">
                 <div class="col-12 text-center">
-                    <p class="text-muted mb-0">&copy; 2024 Tournament Hub. All rights reserved.</p>
+                    <p class="text-muted mb-0">&copy; 2024 Keep Playing. All rights reserved.</p>
                 </div>
             </div>
         </div>
