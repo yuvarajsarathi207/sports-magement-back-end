@@ -1,5 +1,5 @@
-const CACHE = 'tournament-hub-v1';
-const PRECACHE = ['/app/', '/pwa/icon-192.png', '/pwa/icon-512.png'];
+const CACHE = 'tournament-hub-v2';
+const PRECACHE = ['/app/', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
@@ -25,7 +25,7 @@ self.addEventListener('fetch', (event) => {
     if (url.pathname.startsWith('/api')) return;
 
     // App shell + static assets: stale-while-revalidate
-    if (url.pathname.startsWith('/app') || url.pathname.startsWith('/build') || url.pathname.startsWith('/pwa')) {
+    if (url.pathname.startsWith('/app') || url.pathname.startsWith('/build') || url.pathname.startsWith('/icons')) {
         event.respondWith(
             caches.open(CACHE).then(async (cache) => {
                 const cached = await cache.match(request);

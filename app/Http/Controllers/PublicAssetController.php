@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -18,14 +19,61 @@ class PublicAssetController extends Controller
         'txt' => 'text/plain; charset=UTF-8',
     ];
 
-    public function manifest(): BinaryFileResponse
+    public function manifest(): JsonResponse
     {
-        return $this->file('manifest.webmanifest', 'application/manifest+json');
+        return response()->json([
+            'id' => '/',
+            'name' => 'Tournament Hub',
+            'short_name' => 'Tournaments',
+            'description' => 'Browse, join, and manage sports tournaments',
+            'start_url' => '/app/',
+            'scope' => '/',
+            'display' => 'standalone',
+            'orientation' => 'portrait',
+            'background_color' => '#f0f4f8',
+            'theme_color' => '#1e3a5f',
+            'icons' => [
+                [
+                    'src' => url('/icons/icon-192.png'),
+                    'sizes' => '192x192',
+                    'type' => 'image/png',
+                    'purpose' => 'any',
+                ],
+                [
+                    'src' => url('/icons/icon-512.png'),
+                    'sizes' => '512x512',
+                    'type' => 'image/png',
+                    'purpose' => 'any',
+                ],
+                [
+                    'src' => url('/icons/icon-512.png'),
+                    'sizes' => '512x512',
+                    'type' => 'image/png',
+                    'purpose' => 'maskable',
+                ],
+            ],
+        ], 200, [
+            'Content-Type' => 'application/manifest+json',
+            'Cache-Control' => 'public, max-age=3600',
+        ]);
     }
 
     public function serviceWorker(): BinaryFileResponse
     {
-        return $this->file('sw.js', 'application/javascript; charset=UTF-8');
+        $response = $this->file('sw.js', 'application/javascript; charset=UTF-8');
+        $response->headers->set('Service-Worker-Allowed', '/');
+
+        return $response;
+    }
+
+    public function pwaIcon192(): BinaryFileResponse
+    {
+        return $this->file('icons/icon-192.png', 'image/png');
+    }
+
+    public function pwaIcon512(): BinaryFileResponse
+    {
+        return $this->file('icons/icon-512.png', 'image/png');
     }
 
     public function asset(Request $request, string $folder, string $path): BinaryFileResponse
@@ -46,6 +94,9 @@ class PublicAssetController extends Controller
             $mime = self::MIME[$ext] ?? 'application/octet-stream';
         }
 
-        return response()->file($real, ['Content-Type' => $mime]);
+        return response()->file($real, [
+            'Content-Type' => $mime,
+            'Cache-Control' => 'public, max-age=604800',
+        ]);
     }
 }

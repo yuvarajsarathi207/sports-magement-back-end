@@ -61,11 +61,16 @@ check_frontend_build() {
         exit 1
     fi
     ok "Frontend build found (public/build/)"
-    if [ ! -f "public/manifest.webmanifest" ] || [ ! -f "public/sw.js" ]; then
-        err "Missing PWA files (public/manifest.webmanifest or public/sw.js)"
+    if [ ! -f "public/sw.js" ]; then
+        err "Missing PWA files (public/sw.js)"
         exit 1
     fi
     ok "PWA assets found (manifest + service worker)"
+    if [ ! -f "public/icons/icon-192.png" ]; then
+        err "Missing public/icons/icon-192.png"
+        exit 1
+    fi
+    ok "PWA icons found (public/icons/)"
 }
 
 build_frontend() {

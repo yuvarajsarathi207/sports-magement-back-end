@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\PublicAssetController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -17,16 +16,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
-
-// Static public files — needed when Hostinger document root is not Laravel's /public
-Route::get('/manifest.webmanifest', [PublicAssetController::class, 'manifest']);
-Route::get('/sw.js', [PublicAssetController::class, 'serviceWorker']);
-Route::get('/pwa/{path}', [PublicAssetController::class, 'asset'])
-    ->where('path', '.*')
-    ->defaults('folder', 'pwa');
-Route::get('/build/{path}', [PublicAssetController::class, 'asset'])
-    ->where('path', '.*')
-    ->defaults('folder', 'build');
 
 // React SPA — mobile web app
 Route::get('/app/{any?}', function () {
