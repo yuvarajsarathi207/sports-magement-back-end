@@ -214,26 +214,34 @@ In `.env` set `APP_DEBUG=true`, reload the page to see the exception, then set `
 
 Confirm document root in hPanel is: `**public_html/sports-magement-back-end/public`** (must end with `/public`).
 
-### 6. White screen on `/app`
+### 6. White screen on `/app` or PWA files 404
 
-The page title shows but the screen is blank because **JavaScript/CSS files return 404**.
+The page title shows but the screen is blank because **JavaScript/CSS files return 404**. Same issue affects `manifest.webmanifest`, `sw.js`, and `pwa/*`.
 
-**Check in browser:** open `https://keepplaying.in/build/manifest.json` — it must return JSON, not 404.
+**Check:** these must return 200, not 404:
 
-**Fix:**
+- `https://keepplaying.in/build/manifest.json`
+- `https://keepplaying.in/manifest.webmanifest`
+- `https://keepplaying.in/sw.js`
 
-1. On your computer: `npm install && npm run build`
-2. Upload the entire `**public/build/`** folder to the server (`public_html/sports-magement-back-end/public/build/`)
-3. In hPanel set **document root** to `public_html/sports-magement-back-end/public` (not `public_html` alone)
-4. SSH: `php artisan view:clear && php artisan view:cache`
+**Root cause:** Hostinger document root is often `public_html`, not Laravel's `public/` folder. Files exist in `public/` on disk but Apache does not serve them at the domain root.
 
-**Wrong document root workaround** (not recommended): if the site must stay under a subfolder, set in `.env`:
+**Fix (in code):** Laravel routes serve `manifest.webmanifest`, `sw.js`, `pwa/*`, and `build/*` from `public/`. After uploading new code, SSH:
 
-```env
-ASSET_URL=https://keepplaying.in/sports-magement-back-end/public
+```bash
+php artisan route:clear
+php artisan route:cache
+php artisan view:clear
+php artisan view:cache
 ```
 
-Then run `php artisan config:cache`. Prefer fixing the document root instead.
+**Also:**
+
+1. `npm run build` locally
+2. Upload `public/build/`, `public/pwa/`, `public/manifest.webmanifest`, `public/sw.js`
+3. Upload `app/Http/Controllers/PublicAssetController.php` and `routes/web.php`
+
+**Long-term fix:** set document root to `public_html/sports-magement-back-end/public` in hPanel.
 
 ## Summary checklist
 
