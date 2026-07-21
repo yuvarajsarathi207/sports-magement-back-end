@@ -4,6 +4,7 @@ import Layout from './components/Layout';
 import LoaderScreen from './components/LoaderScreen';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import Terms from './pages/auth/Terms';
 import PlayerDashboard from './pages/player/Dashboard';
 import PlayerTournaments from './pages/player/Tournaments';
 import PlayerTournamentDetail from './pages/player/TournamentDetail';
@@ -59,6 +60,7 @@ export default function AppRouter() {
         <Routes>
             <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
             <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
+            <Route path="/terms" element={<Terms />} />
 
             <Route path="/" element={<ProtectedRoute role="player"><Layout role="player" /></ProtectedRoute>}>
                 <Route index element={<PlayerDashboard />} />

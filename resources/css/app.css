@@ -577,6 +577,91 @@ body {
     gap: 12px;
 }
 
+.terms-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.4;
+    cursor: pointer;
+}
+
+.terms-check input {
+    margin-top: 2px;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    accent-color: var(--primary);
+}
+
+.terms-check a {
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.terms-check a:hover {
+    text-decoration: underline;
+}
+
+.terms-page {
+    max-width: 640px;
+    margin: 0 auto;
+    padding-bottom: 40px;
+}
+
+.terms-title {
+    font-size: 24px;
+    margin: 8px 0 4px;
+}
+
+.terms-updated {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+}
+
+.terms-section {
+    margin-bottom: 18px;
+}
+
+.terms-section h2 {
+    font-size: 16px;
+    margin-bottom: 6px;
+}
+
+.terms-section p {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.terms-section a {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.terms-list {
+    margin: 10px 0 0 18px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.terms-list li {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.terms-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 28px 0;
+}
+
 .role-picker {
     display: flex;
     flex-direction: column;

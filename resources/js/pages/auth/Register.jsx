@@ -13,6 +13,7 @@ export default function Register() {
         password: '',
         role: 'player',
     });
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -21,6 +22,12 @@ export default function Register() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+
+        if (!acceptedTerms) {
+            setError('Please accept the Terms & Conditions to continue.');
+            return;
+        }
+
         setLoading(true);
         try {
             const user = await register(form);
@@ -108,7 +115,29 @@ export default function Register() {
                         </div>
                     </div>
 
-                    <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+                    <label className="terms-check">
+                        <input
+                            type="checkbox"
+                            checked={acceptedTerms}
+                            onChange={(e) => setAcceptedTerms(e.target.checked)}
+                        />
+                        <span>
+                            I agree to the{' '}
+                            <Link to="/terms" target="_blank" rel="noopener noreferrer">
+                                Terms & Conditions
+                            </Link>
+                            {' '}and{' '}
+                            <Link to="/terms#privacy" target="_blank" rel="noopener noreferrer">
+                                Privacy Policy
+                            </Link>
+                        </span>
+                    </label>
+
+                    <button
+                        type="submit"
+                        className="btn btn-primary btn-block"
+                        disabled={loading || !acceptedTerms}
+                    >
                         {loading ? 'Creating account...' : 'Create Account'}
                     </button>
                 </form>
