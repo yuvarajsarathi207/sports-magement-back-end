@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -105,12 +108,65 @@ class AuthController extends Controller
             ]);
         }
 
+        if ($user->is_blocked) {
+            throw ValidationException::withMessages([
+                'email' => ['Your account has been blocked. Contact support.'],
+            ]);
+        }
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'user' => $user,
             'token' => $token,
         ]);
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::where('email', $request->email)->first();
+        if (!$user) {
+            // Do not reveal whether the email exists
+            return response()->json(['message' => 'If that email exists, a reset token has been issued.']);
+        }
+
+        $token = Str::random(64);
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $user->email],
+            ['token' => Hash::make($token), 'created_at' => now()]
+        );
+
+        // Stub: in production, email the token. Returned for API clients / demos.
+        return response()->json([
+            'message' => 'If that email exists, a reset token has been issued.',
+            'reset_token' => $token,
+            'email' => $user->email,
+        ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'token' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $row = DB::table('password_reset_tokens')->where('email', $request->email)->first();
+        if (!$row || !Hash::check($request->token, $row->token)) {
+            throw ValidationException::withMessages([
+                'token' => ['Invalid or expired reset token.'],
+            ]);
+        }
+
+        $user = User::where('email', $request->email)->firstOrFail();
+        $user->update(['password' => Hash::make($request->password)]);
+        $user->tokens()->delete();
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+        return response()->json(['message' => 'Password reset successfully']);
     }
 
     /**

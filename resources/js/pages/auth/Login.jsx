@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Alert from '../../components/Alert';
+import FormField from '../../components/FormField';
 
 export default function Login() {
     const { login } = useAuth();
@@ -17,7 +18,11 @@ export default function Login() {
         setLoading(true);
         try {
             const user = await login(email, password);
-            const home = user.role === 'organizer' ? '/organizer' : user.role === 'admin' ? '/admin' : '/';
+            const home = user.role === 'organizer'
+                ? '/organizer'
+                : (user.role === 'admin' || user.role === 'super_admin')
+                    ? '/admin/shop'
+                    : '/';
             navigate(home);
         } catch (err) {
             const msg = err.response?.data?.message
@@ -30,48 +35,62 @@ export default function Login() {
     };
 
     return (
-        <div className="auth-page">
-            <div className="auth-card">
+        <div className="auth-page auth-page-split">
+            <aside className="auth-aside">
+                <Link to="/" className="auth-aside-brand">Keep Playing</Link>
+                <h2>Shop gear. Join tournaments.</h2>
+                <p>One account for the store and the tournament hub.</p>
+                <ul className="auth-aside-list">
+                    <li>Browse products without signing in</li>
+                    <li>Players can shop and book events</li>
+                    <li>Organizers manage tournaments</li>
+                </ul>
+            </aside>
+
+            <div className="auth-card auth-card-wide">
+                <div className="auth-card-top">
+                    <Link to="/" className="auth-back-link">← Back to shopping</Link>
+                </div>
+
                 <div className="auth-brand">
-                    <span className="brand-icon">🏆</span>
-                    <h1>Keep Playing</h1>
-                    <p>Sign in to manage tournaments & play</p>
+                    <span className="brand-mark">KP</span>
+                    <h1>Welcome back</h1>
+                    <p>Sign in to continue shopping or playing</p>
                 </div>
 
                 <Alert message={error} />
 
                 <form onSubmit={handleSubmit} className="auth-form">
-                    <label className="field">
-                        <span>Email</span>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="you@example.com"
-                            required
-                            autoComplete="email"
-                        />
-                    </label>
+                    <FormField
+                        label="Email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        required
+                        autoComplete="email"
+                    />
+                    <FormField
+                        label="Password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Your password"
+                        required
+                        autoComplete="current-password"
+                    />
 
-                    <label className="field">
-                        <span>Password</span>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="••••••••"
-                            required
-                            autoComplete="current-password"
-                        />
-                    </label>
+                    <div className="auth-form-meta">
+                        <Link to="/forgot-password">Forgot password?</Link>
+                    </div>
 
-                    <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+                    <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={loading}>
                         {loading ? 'Signing in...' : 'Sign In'}
                     </button>
                 </form>
 
                 <p className="auth-footer">
-                    New here? <Link to="/register">Create account</Link>
+                    New here? <Link to="/register">Create an account</Link>
                 </p>
             </div>
         </div>

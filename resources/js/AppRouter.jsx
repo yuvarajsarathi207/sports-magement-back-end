@@ -4,7 +4,20 @@ import Layout from './components/Layout';
 import LoaderScreen from './components/LoaderScreen';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import ForgotPassword from './pages/auth/ForgotPassword';
 import Terms from './pages/auth/Terms';
+import ShopHome from './pages/shop/Home';
+import ProductList from './pages/shop/ProductList';
+import ProductDetail from './pages/shop/ProductDetail';
+import Search from './pages/shop/Search';
+import Cart from './pages/shop/Cart';
+import Checkout from './pages/shop/checkout/Checkout';
+import Orders from './pages/shop/orders/Orders';
+import OrderDetail from './pages/shop/orders/OrderDetail';
+import OrderSuccess from './pages/shop/orders/OrderSuccess';
+import ShopProfile from './pages/shop/Profile';
+import Addresses from './pages/shop/Addresses';
+import Wishlist from './pages/shop/Wishlist';
 import PlayerDashboard from './pages/player/Dashboard';
 import PlayerTournaments from './pages/player/Tournaments';
 import PlayerTournamentDetail from './pages/player/TournamentDetail';
@@ -13,17 +26,23 @@ import OrganizerDashboard from './pages/organizer/Dashboard';
 import OrganizerTournaments from './pages/organizer/Tournaments';
 import OrganizerCreateTournament from './pages/organizer/CreateTournament';
 import OrganizerTournamentDetail from './pages/organizer/TournamentDetail';
-import AdminDashboard from './pages/admin/Dashboard';
 import AdminTournaments from './pages/admin/Tournaments';
 import AdminTournamentDetail from './pages/admin/TournamentDetail';
+import AdminShopDashboard from './pages/admin/shop/Dashboard';
+import AdminProducts from './pages/admin/shop/Products';
+import AdminCategories from './pages/admin/shop/Categories';
+import AdminBanners from './pages/admin/shop/Banners';
+import AdminOrders from './pages/admin/shop/Orders';
+import AdminCustomers from './pages/admin/shop/Customers';
+import AdminReports from './pages/admin/shop/Reports';
 
 function roleHome(role) {
     if (role === 'organizer') return '/organizer';
-    if (role === 'admin') return '/admin';
+    if (role === 'admin' || role === 'super_admin') return '/admin/shop';
     return '/';
 }
 
-function ProtectedRoute({ children, role }) {
+function ProtectedRoute({ children, role, roles }) {
     const { user, loading } = useAuth();
 
     if (loading) {
@@ -34,7 +53,8 @@ function ProtectedRoute({ children, role }) {
         return <Navigate to="/login" replace />;
     }
 
-    if (role && user.role !== role) {
+    const allowed = roles || (role ? [role] : null);
+    if (allowed && !allowed.includes(user.role)) {
         return <Navigate to={roleHome(user.role)} replace />;
     }
 
@@ -55,17 +75,41 @@ function GuestRoute({ children }) {
     return children;
 }
 
+function AuthOnly({ children }) {
+    const { user, loading } = useAuth();
+    if (loading) return <LoaderScreen message="Starting app..." fullScreen />;
+    if (!user) return <Navigate to="/login" replace />;
+    return children;
+}
+
 export default function AppRouter() {
     return (
         <Routes>
             <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
             <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
+            <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
             <Route path="/terms" element={<Terms />} />
 
-            <Route path="/" element={<ProtectedRoute role="player"><Layout role="player" /></ProtectedRoute>}>
-                <Route index element={<PlayerDashboard />} />
-                <Route path="tournaments" element={<PlayerTournaments />} />
-                <Route path="tournaments/:id" element={<PlayerTournamentDetail />} />
+            {/* Public e-commerce shell — works without login */}
+            <Route path="/" element={<Layout role="shop" title="Store" />}>
+                <Route index element={<ShopHome />} />
+                <Route path="search" element={<Search />} />
+                <Route path="shop/products" element={<ProductList />} />
+                <Route path="shop/products/:id" element={<ProductDetail />} />
+                <Route path="cart" element={<Cart />} />
+                <Route path="orders" element={<Orders />} />
+                <Route path="orders/:id" element={<AuthOnly><OrderDetail /></AuthOnly>} />
+                <Route path="orders/:id/success" element={<AuthOnly><OrderSuccess /></AuthOnly>} />
+                <Route path="checkout" element={<AuthOnly><Checkout /></AuthOnly>} />
+                <Route path="addresses" element={<AuthOnly><Addresses /></AuthOnly>} />
+                <Route path="wishlist" element={<AuthOnly><Wishlist /></AuthOnly>} />
+                <Route path="profile" element={<ShopProfile />} />
+                <Route path="tournaments" element={<ProtectedRoute role="player"><PlayerTournaments /></ProtectedRoute>} />
+                <Route path="tournaments/:id" element={<ProtectedRoute role="player"><PlayerTournamentDetail /></ProtectedRoute>} />
+            </Route>
+
+            <Route path="/player" element={<ProtectedRoute role="player"><Layout role="shop" /></ProtectedRoute>}>
+                <Route path="dashboard" element={<PlayerDashboard />} />
                 <Route path="profile" element={<PlayerProfile />} />
             </Route>
 
@@ -76,10 +120,18 @@ export default function AppRouter() {
                 <Route path="tournaments/:id" element={<OrganizerTournamentDetail />} />
             </Route>
 
-            <Route path="/admin" element={<ProtectedRoute role="admin"><Layout role="admin" /></ProtectedRoute>}>
-                <Route index element={<AdminDashboard />} />
+            <Route path="/admin" element={<ProtectedRoute roles={['admin', 'super_admin']}><Layout role="admin" /></ProtectedRoute>}>
+                <Route index element={<Navigate to="/admin/shop" replace />} />
                 <Route path="tournaments" element={<AdminTournaments />} />
                 <Route path="tournaments/:id" element={<AdminTournamentDetail />} />
+                <Route path="shop" element={<AdminShopDashboard />} />
+                <Route path="shop/products" element={<AdminProducts />} />
+                <Route path="shop/categories" element={<AdminCategories />} />
+                <Route path="shop/banners" element={<AdminBanners />} />
+                <Route path="shop/orders" element={<AdminOrders />} />
+                <Route path="shop/orders/:id" element={<AdminOrders />} />
+                <Route path="shop/customers" element={<AdminCustomers />} />
+                <Route path="shop/reports" element={<AdminReports />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

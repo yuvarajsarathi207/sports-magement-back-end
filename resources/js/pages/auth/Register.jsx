@@ -2,6 +2,22 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Alert from '../../components/Alert';
+import FormField from '../../components/FormField';
+
+const ROLES = [
+    {
+        id: 'player',
+        title: 'Player',
+        desc: 'Shop gear and join tournaments',
+        icon: '🎮',
+    },
+    {
+        id: 'organizer',
+        title: 'Organizer',
+        desc: 'Create and manage tournaments',
+        icon: '📋',
+    },
+];
 
 export default function Register() {
     const { register } = useAuth();
@@ -44,72 +60,77 @@ export default function Register() {
     };
 
     return (
-        <div className="auth-page">
-            <div className="auth-card">
+        <div className="auth-page auth-page-split">
+            <aside className="auth-aside">
+                <Link to="/" className="auth-aside-brand">Keep Playing</Link>
+                <h2>Create one account</h2>
+                <p>Use the same login for shopping and tournaments. Register once.</p>
+            </aside>
+
+            <div className="auth-card auth-card-wide">
                 <div className="auth-brand">
-                    <span className="brand-icon">🏆</span>
-                    <h1>Join Keep Playing</h1>
-                    <p>Register as a player or organizer</p>
+                    <span className="brand-mark">KP</span>
+                    <h1>Create account</h1>
+                    <p>Players can shop and book events with this account</p>
                 </div>
 
                 <Alert message={error} />
 
                 <form onSubmit={handleSubmit} className="auth-form">
-                    <label className="field">
-                        <span>Full Name</span>
-                        <input
-                            value={form.name}
-                            onChange={(e) => update('name', e.target.value)}
-                            placeholder="John Doe"
-                            required
-                        />
-                    </label>
+                    <FormField
+                        label="Full name"
+                        value={form.name}
+                        onChange={(e) => update('name', e.target.value)}
+                        placeholder="John Doe"
+                        required
+                        autoComplete="name"
+                    />
 
-                    <label className="field">
-                        <span>Email</span>
-                        <input
+                    <div className="field-row">
+                        <FormField
+                            label="Email"
                             type="email"
                             value={form.email}
                             onChange={(e) => update('email', e.target.value)}
                             placeholder="you@example.com"
                             required
+                            autoComplete="email"
                         />
-                    </label>
-
-                    <label className="field">
-                        <span>Mobile</span>
-                        <input
+                        <FormField
+                            label="Mobile"
                             type="tel"
                             value={form.mobile}
                             onChange={(e) => update('mobile', e.target.value)}
                             placeholder="9876543210"
                             required
+                            autoComplete="tel"
                         />
-                    </label>
+                    </div>
 
-                    <label className="field">
-                        <span>Password</span>
-                        <input
-                            type="password"
-                            value={form.password}
-                            onChange={(e) => update('password', e.target.value)}
-                            placeholder="Min 8 characters"
-                            minLength={8}
-                            required
-                        />
-                    </label>
+                    <FormField
+                        label="Password"
+                        type="password"
+                        value={form.password}
+                        onChange={(e) => update('password', e.target.value)}
+                        placeholder="At least 8 characters"
+                        required
+                        autoComplete="new-password"
+                        hint="Use 8+ characters with a mix of letters and numbers"
+                    />
 
                     <div className="role-picker">
-                        <span className="field-label">I am a</span>
-                        <div className="role-options">
-                            {['player', 'organizer'].map((role) => (
+                        <span className="field-label">I want to join as</span>
+                        <div className="role-cards">
+                            {ROLES.map((role) => (
                                 <button
-                                    key={role}
+                                    key={role.id}
                                     type="button"
-                                    className={`role-btn${form.role === role ? ' active' : ''}`}
-                                    onClick={() => update('role', role)}
+                                    className={`role-card${form.role === role.id ? ' active' : ''}`}
+                                    onClick={() => update('role', role.id)}
                                 >
-                                    {role === 'player' ? '🎮 Player' : '📋 Organizer'}
+                                    <span className="role-card-icon">{role.icon}</span>
+                                    <span className="role-card-title">{role.title}</span>
+                                    <span className="role-card-desc">{role.desc}</span>
                                 </button>
                             ))}
                         </div>
@@ -123,19 +144,15 @@ export default function Register() {
                         />
                         <span>
                             I agree to the{' '}
-                            <Link to="/terms" target="_blank" rel="noopener noreferrer">
-                                Terms & Conditions
-                            </Link>
+                            <Link to="/terms" target="_blank" rel="noopener noreferrer">Terms & Conditions</Link>
                             {' '}and{' '}
-                            <Link to="/terms#privacy" target="_blank" rel="noopener noreferrer">
-                                Privacy Policy
-                            </Link>
+                            <Link to="/terms#privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>
                         </span>
                     </label>
 
                     <button
                         type="submit"
-                        className="btn btn-primary btn-block"
+                        className="btn btn-primary btn-block btn-lg"
                         disabled={loading || !acceptedTerms}
                     >
                         {loading ? 'Creating account...' : 'Create Account'}

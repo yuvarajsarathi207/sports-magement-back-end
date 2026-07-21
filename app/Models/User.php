@@ -23,6 +23,8 @@ class User extends Authenticatable
         'mobile',
         'role',
         'password',
+        'is_blocked',
+        'blocked_at',
     ];
 
     /**
@@ -38,11 +40,13 @@ class User extends Authenticatable
     /**
      * The attributes that should be cast.
      *
-     * @var array<string, string>
+     * @var array<int, string>
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'is_blocked' => 'boolean',
+        'blocked_at' => 'datetime',
     ];
 
     public function organizedTournaments()
@@ -65,6 +69,26 @@ class User extends Authenticatable
         return $this->hasMany(Payment::class, 'player_id');
     }
 
+    public function addresses()
+    {
+        return $this->hasMany(Address::class);
+    }
+
+    public function cart()
+    {
+        return $this->hasOne(Cart::class);
+    }
+
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
     public function isOrganizer()
     {
         return $this->role === 'organizer';
@@ -75,8 +99,25 @@ class User extends Authenticatable
         return $this->role === 'player';
     }
 
+    public function isCustomer()
+    {
+        return false;
+    }
+
     public function isAdmin()
     {
-        return $this->role === 'admin';
+        return in_array($this->role, ['admin', 'super_admin'], true);
+    }
+
+    public function isSuperAdmin()
+    {
+        return $this->role === 'super_admin';
+    }
+
+    /** Players and organizers shop with the same account. */
+    public function canShop()
+    {
+        return in_array($this->role, ['player', 'organizer', 'admin', 'super_admin'], true)
+            && !$this->is_blocked;
     }
 }

@@ -35,6 +35,9 @@ export default function AdminDashboard() {
 
     return (
         <div className="page">
+            <button type="button" className="btn btn-primary btn-block" style={{ marginBottom: 16 }} onClick={() => navigate('/admin/shop')}>
+                Open Shop Admin
+            </button>
             <StatusStats items={statusItems} />
 
             <section className="section">
