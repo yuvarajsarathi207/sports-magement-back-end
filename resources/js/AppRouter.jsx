@@ -5,6 +5,7 @@ import LoaderScreen from './components/LoaderScreen';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Terms from './pages/auth/Terms';
+import Privacy from './pages/auth/Privacy';
 import PlayerDashboard from './pages/player/Dashboard';
 import PlayerTournaments from './pages/player/Tournaments';
 import PlayerTournamentDetail from './pages/player/TournamentDetail';
@@ -61,6 +62,7 @@ export default function AppRouter() {
             <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
             <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
 
             <Route path="/" element={<ProtectedRoute role="player"><Layout role="player" /></ProtectedRoute>}>
                 <Route index element={<PlayerDashboard />} />
@@ -74,12 +76,14 @@ export default function AppRouter() {
                 <Route path="tournaments" element={<OrganizerTournaments />} />
                 <Route path="tournaments/new" element={<OrganizerCreateTournament />} />
                 <Route path="tournaments/:id" element={<OrganizerTournamentDetail />} />
+                <Route path="profile" element={<PlayerProfile />} />
             </Route>
 
             <Route path="/admin" element={<ProtectedRoute role="admin"><Layout role="admin" /></ProtectedRoute>}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="tournaments" element={<AdminTournaments />} />
                 <Route path="tournaments/:id" element={<AdminTournamentDetail />} />
+                <Route path="profile" element={<PlayerProfile />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

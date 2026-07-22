@@ -127,7 +127,7 @@ export default function Register() {
                                 Terms & Conditions
                             </Link>
                             {' '}and{' '}
-                            <Link to="/terms#privacy" target="_blank" rel="noopener noreferrer">
+                            <Link to="/privacy" target="_blank" rel="noopener noreferrer">
                                 Privacy Policy
                             </Link>
                         </span>
