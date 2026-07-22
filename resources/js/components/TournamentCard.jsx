@@ -36,6 +36,16 @@ export default function TournamentCard({ tournament, onClick, badge, hideLocatio
         >
             <div className="tournament-card-accent" aria-hidden="true" />
 
+            {(tournament.cover_image_url || tournament.cover_image) && (
+                <img
+                    src={tournament.cover_image_url || tournament.cover_image}
+                    alt=""
+                    className="tournament-card-cover"
+                    loading="lazy"
+                    decoding="async"
+                />
+            )}
+
             <div className="tournament-card-body">
                 <div className="tournament-card-header">
                     <div className="tournament-card-sport">

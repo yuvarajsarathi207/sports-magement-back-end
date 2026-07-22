@@ -27,11 +27,17 @@ class Tournament extends Model
         'entry_fee',
         'price_details',
         'ball_type',
+        'cover_image',
         'status',
         'is_published',
         'rejection_reason',
         'approved_by',
         'approved_at',
+    ];
+
+    protected $appends = [
+        'cover_image_url',
+        'template_url',
     ];
 
     protected $casts = [
@@ -41,6 +47,16 @@ class Tournament extends Model
         'is_published' => 'boolean',
         'approved_at' => 'datetime',
     ];
+
+    public function getCoverImageUrlAttribute(): ?string
+    {
+        return \App\Services\MediaStorage::url($this->cover_image);
+    }
+
+    public function getTemplateUrlAttribute(): ?string
+    {
+        return \App\Services\MediaStorage::url($this->template);
+    }
 
     public function scopePublishedForPlayers($query)
     {

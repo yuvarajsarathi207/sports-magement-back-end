@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
+import { featuresFromSettings, roleHome } from '../../utils/navigation';
 import Alert from '../../components/Alert';
 import FormField from '../../components/FormField';
 
 export default function Login() {
     const { login } = useAuth();
+    const { settings } = useSettings();
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -18,12 +21,7 @@ export default function Login() {
         setLoading(true);
         try {
             const user = await login(email, password);
-            const home = user.role === 'organizer'
-                ? '/organizer'
-                : (user.role === 'admin' || user.role === 'super_admin')
-                    ? '/admin/shop'
-                    : '/';
-            navigate(home);
+            navigate(roleHome(user.role, featuresFromSettings(settings)));
         } catch (err) {
             const msg = err.response?.data?.message
                 || err.response?.data?.errors?.email?.[0]
@@ -53,7 +51,7 @@ export default function Login() {
                 </div>
 
                 <div className="auth-brand">
-                    <span className="brand-mark">KP</span>
+                    <img src="/icons/logo-128.webp" alt="Keep Playing" className="auth-brand-logo" width="72" height="72" decoding="async" onError={(e) => { e.currentTarget.src = '/icons/logo-128.png'; }} />
                     <h1>Welcome back</h1>
                     <p>Sign in to continue shopping or playing</p>
                 </div>
@@ -79,18 +77,15 @@ export default function Login() {
                         required
                         autoComplete="current-password"
                     />
-
-                    <div className="auth-form-meta">
-                        <Link to="/forgot-password">Forgot password?</Link>
-                    </div>
-
-                    <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={loading}>
-                        {loading ? 'Signing in...' : 'Sign In'}
+                    <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+                        {loading ? 'Signing in...' : 'Sign in'}
                     </button>
                 </form>
 
                 <p className="auth-footer">
-                    New here? <Link to="/register">Create an account</Link>
+                    <Link to="/forgot-password">Forgot password?</Link>
+                    {' · '}
+                    <Link to="/register">Create account</Link>
                 </p>
             </div>
         </div>

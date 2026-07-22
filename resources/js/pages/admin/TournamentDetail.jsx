@@ -85,6 +85,15 @@ export default function AdminTournamentDetail() {
             <button type="button" className="back-btn" onClick={() => navigate(-1)}>← Back</button>
 
             <div className="detail-hero">
+                {(tournament.cover_image_url || tournament.cover_image) && (
+                    <img
+                        src={tournament.cover_image_url || tournament.cover_image}
+                        alt=""
+                        className="tournament-detail-cover"
+                        loading="lazy"
+                        decoding="async"
+                    />
+                )}
                 <span className={`badge badge-${statusBadgeVariant(tournament.status)}`}>
                     {STATUS_LABELS[tournament.status] || tournament.status}
                 </span>

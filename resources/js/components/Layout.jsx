@@ -1,7 +1,10 @@
 import { NavLink, Outlet, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useModule } from '../context/ModuleContext';
+import { useSettings } from '../context/SettingsContext';
+import { adminHome, isAdminRole } from '../utils/navigation';
 import ProfileMenu from './ProfileMenu';
+import BrandLogo from './BrandLogo';
 
 function shopLinks(user) {
     return [
@@ -23,18 +26,21 @@ function tournamentLinks(user) {
             { to: '/organizer', label: 'Dashboard', end: true },
             { to: '/organizer/tournaments', label: 'My Events' },
             { to: '/organizer/tournaments/new', label: 'Create' },
+            { to: '/organizer/profile', label: 'Account' },
         ];
     }
-    if (user.role === 'admin' || user.role === 'super_admin') {
+    if (isAdminRole(user.role)) {
         return [
             { to: '/admin/tournaments', label: 'All Tournaments' },
             { to: '/admin/tournaments?status=pending_approval', label: 'Pending' },
+            { to: '/admin/settings', label: 'Settings' },
+            { to: '/admin/profile', label: 'Account' },
         ];
     }
     return [
         { to: '/tournaments', label: 'Browse' },
         { to: '/player/dashboard', label: 'My Games' },
-        { to: '/player/profile', label: 'Player Profile' },
+        { to: '/profile', label: 'Account' },
     ];
 }
 
@@ -47,58 +53,75 @@ function adminShopLinks() {
         { to: '/admin/shop/orders', label: 'Orders' },
         { to: '/admin/shop/customers', label: 'Users' },
         { to: '/admin/shop/reports', label: 'Reports' },
+        { to: '/admin/settings', label: 'Settings' },
+        { to: '/admin/profile', label: 'Account' },
     ];
 }
 
 export default function Layout({ role = 'shop' }) {
     const { user } = useAuth();
-    const { module, switchModule, isShop } = useModule();
+    const { switchModule, isShop, features } = useModule();
+    const { settings } = useSettings();
     const navigate = useNavigate();
-    const isAdmin = role === 'admin' || user?.role === 'admin' || user?.role === 'super_admin';
+    const onAdminShell = role === 'admin';
+    const isAdminUser = isAdminRole(user?.role);
+    const showAdminShopNav = onAdminShell && isShop && features.shop;
 
-    const links = isAdmin && isShop
+    const links = showAdminShopNav
         ? adminShopLinks()
-        : isShop
+        : isShop && features.shop
             ? shopLinks(user)
             : tournamentLinks(user);
 
-    const profileRole = user?.role === 'admin' || user?.role === 'super_admin'
+    const profileRole = isAdminUser
         ? 'admin'
         : user?.role === 'organizer'
             ? 'organizer'
             : 'player';
 
+    const brandHome = isAdminUser
+        ? adminHome(features)
+        : (features.shop ? '/' : (user ? (user.role === 'organizer' ? '/organizer' : '/tournaments') : '/login'));
+
     return (
-        <div className={`site-shell${isAdmin ? ' site-shell-admin' : ''}`}>
+        <div className={`site-shell${onAdminShell ? ' site-shell-admin' : ''}`}>
             <header className="site-header">
                 <div className="site-header-bar">
-                    <Link to={isAdmin ? (isShop ? '/admin/shop' : '/admin/tournaments') : '/'} className="site-brand">
-                        <span className="site-brand-mark">KP</span>
+                    <Link to={brandHome} className="site-brand">
+                        <BrandLogo className="site-brand-logo" size={128} alt={settings.app_name || 'Keep Playing'} priority />
                         <span className="site-brand-text">
-                            <strong>Keep Playing</strong>
-                            <small>{isShop ? 'Store' : 'Tournaments'}</small>
+                            <strong>{settings.app_name || 'Keep Playing'}</strong>
+                            <small>
+                                {onAdminShell
+                                    ? 'Admin'
+                                    : !features.module_switch
+                                        ? (features.shop ? 'Store' : 'Tournaments')
+                                        : (isShop ? 'Store' : 'Tournaments')}
+                            </small>
                         </span>
                     </Link>
 
-                    <div className="module-switch" role="group" aria-label="Module switch">
-                        <button
-                            type="button"
-                            className={`module-switch-btn${isShop ? ' active' : ''}`}
-                            onClick={() => switchModule('shop')}
-                        >
-                            🛍️ Shop
-                        </button>
-                        <button
-                            type="button"
-                            className={`module-switch-btn${!isShop ? ' active' : ''}`}
-                            onClick={() => switchModule('tournaments')}
-                        >
-                            🏆 Tournaments
-                        </button>
-                    </div>
+                    {features.module_switch && (
+                        <div className="module-switch" role="group" aria-label="Module switch">
+                            <button
+                                type="button"
+                                className={`module-switch-btn${isShop ? ' active' : ''}`}
+                                onClick={() => switchModule('shop')}
+                            >
+                                🛍️ Shop
+                            </button>
+                            <button
+                                type="button"
+                                className={`module-switch-btn${!isShop ? ' active' : ''}`}
+                                onClick={() => switchModule('tournaments')}
+                            >
+                                🏆 Tournaments
+                            </button>
+                        </div>
+                    )}
 
                     <div className="site-header-actions">
-                        {isShop && !isAdmin && (
+                        {isShop && !onAdminShell && features.shop && (
                             <button
                                 type="button"
                                 className="site-search-btn"
@@ -146,46 +169,82 @@ export default function Layout({ role = 'shop' }) {
 
             <footer className="site-footer">
                 <div className="site-container site-footer-inner">
-                    <div>
-                        <strong>Keep Playing</strong>
-                        <p>Shop gear and join tournaments with one account.</p>
+                    <div className="site-footer-brand">
+                        <BrandLogo className="site-footer-logo" size={64} alt="" />
+                        <div>
+                            <strong>{settings.app_name || 'Keep Playing'}</strong>
+                            <p>
+                                {features.module_switch
+                                    ? 'Shop gear and join tournaments with one account.'
+                                    : features.shop
+                                        ? 'Your sports store.'
+                                        : 'Find and join tournaments.'}
+                            </p>
+                        </div>
                     </div>
                     <div className="site-footer-links">
-                        <button type="button" className="btn-link" onClick={() => switchModule('shop')}>Shop</button>
-                        <button type="button" className="btn-link" onClick={() => switchModule('tournaments')}>Tournaments</button>
+                        {features.shop && (
+                            <button type="button" className="btn-link" onClick={() => (features.module_switch ? switchModule('shop') : navigate(isAdminUser ? adminHome(features) : '/'))}>
+                                Shop
+                            </button>
+                        )}
+                        {features.tournaments && (
+                            <button type="button" className="btn-link" onClick={() => (features.module_switch ? switchModule('tournaments') : navigate(user ? (isAdminUser ? '/admin/tournaments' : '/tournaments') : '/login'))}>
+                                Tournaments
+                            </button>
+                        )}
+                        {isAdminUser && <Link to={adminHome(features)}>Admin</Link>}
+                        {isAdminUser && <Link to="/admin/settings">Settings</Link>}
                         <Link to="/terms">Terms</Link>
+                        <Link to="/privacy">Privacy</Link>
                     </div>
                 </div>
             </footer>
 
-            {/* Mobile quick bar */}
             <nav className="site-mobile-bar" aria-label="Quick navigation">
-                {isShop ? (
+                {showAdminShopNav ? (
                     <>
-                        <NavLink to={isAdmin ? '/admin/shop' : '/'} end className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+                        <NavLink to="/admin/shop" end className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
                             <span className="nav-icon">🏠</span><span className="nav-label">Home</span>
                         </NavLink>
-                        <NavLink to={isAdmin ? '/admin/shop/products' : '/shop/products'} className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+                        <NavLink to="/admin/shop/products" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
                             <span className="nav-icon">🛍️</span><span className="nav-label">Shop</span>
                         </NavLink>
-                        {!isAdmin && (
-                            <NavLink to="/cart" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
-                                <span className="nav-icon">🛒</span><span className="nav-label">Cart</span>
-                            </NavLink>
+                        <NavLink to="/admin/settings" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+                            <span className="nav-icon">⚙️</span><span className="nav-label">Settings</span>
+                        </NavLink>
+                        <NavLink to="/admin/profile" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+                            <span className="nav-icon">👤</span><span className="nav-label">Account</span>
+                        </NavLink>
+                    </>
+                ) : isShop && features.shop ? (
+                    <>
+                        <NavLink to="/" end className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+                            <span className="nav-icon">🏠</span><span className="nav-label">Home</span>
+                        </NavLink>
+                        <NavLink to="/shop/products" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+                            <span className="nav-icon">🛍️</span><span className="nav-label">Shop</span>
+                        </NavLink>
+                        <NavLink to="/cart" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+                            <span className="nav-icon">🛒</span><span className="nav-label">Cart</span>
+                        </NavLink>
+                        {features.module_switch && (
+                            <button type="button" className="bottom-nav-item" onClick={() => switchModule('tournaments')}>
+                                <span className="nav-icon">🏆</span><span className="nav-label">Play</span>
+                            </button>
                         )}
-                        <button type="button" className="bottom-nav-item" onClick={() => switchModule('tournaments')}>
-                            <span className="nav-icon">🏆</span><span className="nav-label">Play</span>
-                        </button>
-                        <NavLink to={isAdmin ? '/admin/shop/orders' : '/profile'} className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
-                            <span className="nav-icon">👤</span><span className="nav-label">{isAdmin ? 'Orders' : 'Account'}</span>
+                        <NavLink to="/profile" className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
+                            <span className="nav-icon">👤</span><span className="nav-label">Account</span>
                         </NavLink>
                     </>
                 ) : (
                     <>
-                        <button type="button" className="bottom-nav-item" onClick={() => switchModule('shop')}>
-                            <span className="nav-icon">🛍️</span><span className="nav-label">Shop</span>
-                        </button>
-                        {tournamentLinks(user).slice(0, 3).map((item) => (
+                        {features.module_switch && (
+                            <button type="button" className="bottom-nav-item" onClick={() => switchModule('shop')}>
+                                <span className="nav-icon">🛍️</span><span className="nav-label">Shop</span>
+                            </button>
+                        )}
+                        {tournamentLinks(user).slice(0, 4).map((item) => (
                             <NavLink key={item.to} to={item.to} end={item.end} className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}>
                                 <span className="nav-icon">•</span><span className="nav-label">{item.label}</span>
                             </NavLink>

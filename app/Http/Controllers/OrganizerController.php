@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Tournament;
 use App\Models\SportsCategory;
+use App\Services\MediaStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\AdminController;
 
 /**
@@ -171,6 +171,7 @@ class OrganizerController extends Controller
             'slot_count' => 'required|integer|min:1',
             'template' => 'nullable|string',
             'template_file' => 'required_without:template|nullable|file|mimes:pdf,doc,docx,png,jpg,jpeg|max:10240',
+            'cover_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'rules' => 'required|string',
             'entry_fee' => 'required|numeric|min:0',
             'price_details' => 'nullable|string',
@@ -179,8 +180,13 @@ class OrganizerController extends Controller
 
         $template = $request->template;
         if ($request->hasFile('template_file')) {
-            $path = $request->file('template_file')->store('tournament-templates', 'public');
-            $template = Storage::url($path);
+            $path = MediaStorage::store($request->file('template_file'), 'tournament-templates');
+            $template = $path;
+        }
+
+        $coverImage = null;
+        if ($request->hasFile('cover_image')) {
+            $coverImage = MediaStorage::store($request->file('cover_image'), 'tournament-covers');
         }
 
         $tournament = Tournament::create([
@@ -201,6 +207,7 @@ class OrganizerController extends Controller
             'entry_fee' => $request->entry_fee,
             'price_details' => $request->price_details,
             'ball_type' => $request->ball_type,
+            'cover_image' => $coverImage,
             'status' => 'draft',
         ]);
 
@@ -293,6 +300,8 @@ class OrganizerController extends Controller
             'winning_date' => 'sometimes|date|after:start_date',
             'slot_count' => 'sometimes|integer|min:1',
             'template' => 'nullable|string',
+            'template_file' => 'nullable|file|mimes:pdf,doc,docx,png,jpg,jpeg|max:10240',
+            'cover_image' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:5120',
             'rules' => 'sometimes|string',
             'entry_fee' => 'sometimes|numeric|min:0',
             'price_details' => 'nullable|string',
@@ -300,7 +309,17 @@ class OrganizerController extends Controller
             'status' => 'sometimes|in:draft,pending_approval,published,rejected',
         ]);
 
-        $tournament->update($request->all());
+        $data = $request->except(['template_file', 'cover_image']);
+
+        if ($request->hasFile('template_file')) {
+            $data['template'] = MediaStorage::store($request->file('template_file'), 'tournament-templates');
+        }
+
+        if ($request->hasFile('cover_image')) {
+            $data['cover_image'] = MediaStorage::store($request->file('cover_image'), 'tournament-covers');
+        }
+
+        $tournament->update($data);
 
         return response()->json($tournament->load('sportsCategory'));
     }

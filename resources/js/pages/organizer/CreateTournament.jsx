@@ -1,10 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/client';
 import Alert from '../../components/Alert';
 import FormLabel from '../../components/FormLabel';
 import { INDIAN_STATES } from '../../data/indianStates';
 import { composeTournamentLocation } from '../../utils/tournamentLocation';
+
+const STEPS = [
+    { id: 'basics', title: 'Basics', icon: '🏆' },
+    { id: 'location', title: 'Location', icon: '📍' },
+    { id: 'media', title: 'Media', icon: '🖼️' },
+    { id: 'details', title: 'Details', icon: '📜' },
+];
 
 const initialForm = {
     sports_category_id: '',
@@ -24,35 +31,64 @@ const initialForm = {
 };
 
 const ACCEPTED_TEMPLATE_TYPES = '.pdf,.doc,.docx,.png,.jpg,.jpeg';
+const ACCEPTED_COVER_TYPES = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp';
 const MAX_TEMPLATE_SIZE = 10 * 1024 * 1024;
+const MAX_COVER_SIZE = 5 * 1024 * 1024;
 
-function validateForm(form, templateFile) {
+function validateStep(stepId, form, templateFile) {
     const errors = {};
 
-    if (!form.team_name.trim()) errors.team_name = 'Tournament name is required';
-    if (!form.state) errors.state = 'State is required';
-    if (!form.city.trim()) errors.city = 'City is required';
-    if (!form.district.trim()) errors.district = 'District is required';
-    if (!form.pincode) errors.pincode = 'Pincode is required';
-    else if (form.pincode.length !== 6) errors.pincode = 'Pincode must be 6 digits';
-    if (!form.sports_category_id) errors.sports_category_id = 'Sport category is required';
-    if (!form.start_date) errors.start_date = 'Start date is required';
-    if (!form.winning_date) errors.winning_date = 'Winning date is required';
-    if (!form.slot_count || Number(form.slot_count) < 1) errors.slot_count = 'Slots must be at least 1';
-    if (form.entry_fee === '' || form.entry_fee === null) errors.entry_fee = 'Entry fee is required';
-    else if (Number(form.entry_fee) < 0) errors.entry_fee = 'Entry fee cannot be negative';
-    if (!form.rules.trim()) errors.rules = 'Rules are required';
-    if (!templateFile) errors.template_file = 'Tournament template is required';
+    if (stepId === 'basics') {
+        if (!form.team_name.trim()) errors.team_name = 'Tournament name is required';
+        if (!form.sports_category_id) errors.sports_category_id = 'Sport category is required';
+        if (!form.start_date) errors.start_date = 'Start date is required';
+        if (!form.winning_date) errors.winning_date = 'Winning date is required';
+        else if (form.start_date && form.winning_date < form.start_date) {
+            errors.winning_date = 'Winning date must be after start date';
+        }
+        if (!form.slot_count || Number(form.slot_count) < 1) errors.slot_count = 'Slots must be at least 1';
+        if (form.entry_fee === '' || form.entry_fee === null) errors.entry_fee = 'Entry fee is required';
+        else if (Number(form.entry_fee) < 0) errors.entry_fee = 'Entry fee cannot be negative';
+    }
+
+    if (stepId === 'location') {
+        if (!form.state) errors.state = 'State is required';
+        if (!form.city.trim()) errors.city = 'City is required';
+        if (!form.district.trim()) errors.district = 'District is required';
+        if (!form.pincode) errors.pincode = 'Pincode is required';
+        else if (form.pincode.length !== 6) errors.pincode = 'Pincode must be 6 digits';
+    }
+
+    if (stepId === 'media') {
+        if (!templateFile) errors.template_file = 'Tournament template is required';
+    }
+
+    if (stepId === 'details') {
+        if (!form.rules.trim()) errors.rules = 'Rules are required';
+    }
 
     return errors;
+}
+
+function validateForm(form, templateFile) {
+    return {
+        ...validateStep('basics', form, templateFile),
+        ...validateStep('location', form, templateFile),
+        ...validateStep('media', form, templateFile),
+        ...validateStep('details', form, templateFile),
+    };
 }
 
 export default function CreateTournament() {
     const navigate = useNavigate();
     const fileInputRef = useRef(null);
+    const coverInputRef = useRef(null);
+    const [step, setStep] = useState(0);
     const [categories, setCategories] = useState([]);
     const [form, setForm] = useState(initialForm);
     const [templateFile, setTemplateFile] = useState(null);
+    const [coverFile, setCoverFile] = useState(null);
+    const [coverPreview, setCoverPreview] = useState('');
     const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState({});
     const [showFieldErrors, setShowFieldErrors] = useState(false);
@@ -62,6 +98,10 @@ export default function CreateTournament() {
     useEffect(() => {
         api.get('/sports-categories').then((res) => setCategories(res.data));
     }, []);
+
+    useEffect(() => () => {
+        if (coverPreview) URL.revokeObjectURL(coverPreview);
+    }, [coverPreview]);
 
     const update = (key, value) => {
         setForm((prev) => ({ ...prev, [key]: value }));
@@ -128,7 +168,7 @@ export default function CreateTournament() {
                 setLocating(false);
                 setError(geoError.message || 'Could not get your location. Please allow location access.');
             },
-            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+            { enableHighAccuracy: true, timeout: 15e3, maximumAge: 0 }
         );
     };
 
@@ -157,6 +197,48 @@ export default function CreateTournament() {
         }
     };
 
+    const handleCoverChange = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) {
+            setCoverFile(null);
+            setCoverPreview('');
+            return;
+        }
+
+        if (file.size > MAX_COVER_SIZE) {
+            setError('Cover image must be 5 MB or smaller.');
+            e.target.value = '';
+            setCoverFile(null);
+            setCoverPreview('');
+            return;
+        }
+
+        setError('');
+        setCoverFile(file);
+        setCoverPreview(URL.createObjectURL(file));
+    };
+
+    const goNext = () => {
+        const stepId = STEPS[step].id;
+        const errors = validateStep(stepId, form, templateFile);
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors);
+            setShowFieldErrors(true);
+            setError('Please complete the required fields on this step.');
+            return;
+        }
+        setError('');
+        setShowFieldErrors(false);
+        setFieldErrors({});
+        setStep((s) => Math.min(s + 1, STEPS.length - 1));
+    };
+
+    const goBack = () => {
+        setError('');
+        setShowFieldErrors(false);
+        setStep((s) => Math.max(s - 1, 0));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -166,15 +248,15 @@ export default function CreateTournament() {
             setFieldErrors(errors);
             setShowFieldErrors(true);
             setError('Please fill in all required fields.');
-            const firstInvalid = document.querySelector('.field-invalid');
-            firstInvalid?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const firstStepWithError = STEPS.findIndex((s) => Object.keys(validateStep(s.id, form, templateFile)).length > 0);
+            if (firstStepWithError >= 0) setStep(firstStepWithError);
             return;
         }
 
         setShowFieldErrors(false);
         setFieldErrors({});
-
         setLoading(true);
+
         try {
             const formData = new FormData();
             formData.append('sports_category_id', form.sports_category_id);
@@ -190,7 +272,7 @@ export default function CreateTournament() {
             formData.append('rules', form.rules);
             formData.append('entry_fee', form.entry_fee);
             formData.append('template_file', templateFile);
-
+            if (coverFile) formData.append('cover_image', coverFile);
             if (form.location_details) formData.append('location_details', form.location_details);
             if (form.price_details) formData.append('price_details', form.price_details);
             if (form.ball_type) formData.append('ball_type', form.ball_type);
@@ -205,215 +287,304 @@ export default function CreateTournament() {
         }
     };
 
+    const progress = useMemo(() => ((step + 1) / STEPS.length) * 100, [step]);
+
     return (
-        <div className="page">
+        <div className="page create-tournament-page">
             <button type="button" className="back-btn" onClick={() => navigate(-1)}>← Back</button>
             <h2 className="page-title">Create Tournament</h2>
+            <p className="text-muted" style={{ marginTop: -8, marginBottom: 16 }}>
+                Add details in a few steps. Cover images upload to cloud storage when S3 is configured.
+            </p>
+
+            <div className="create-steps" aria-label="Form progress">
+                {STEPS.map((item, index) => (
+                    <button
+                        key={item.id}
+                        type="button"
+                        className={`create-step${index === step ? ' active' : ''}${index < step ? ' done' : ''}`}
+                        onClick={() => index <= step && setStep(index)}
+                    >
+                        <span className="create-step-icon">{item.icon}</span>
+                        <span className="create-step-label">{item.title}</span>
+                    </button>
+                ))}
+            </div>
+            <div className="create-progress" aria-hidden>
+                <span style={{ width: `${progress}%` }} />
+            </div>
 
             <Alert message={error} />
 
-            <form onSubmit={handleSubmit} className="form-stack" noValidate>
-                <label className={fieldClass('team_name')}>
-                    <FormLabel icon="🏆" required>Tournament Name</FormLabel>
-                    <input
-                        value={form.team_name}
-                        onChange={(e) => update('team_name', e.target.value)}
-                        placeholder="Summer Cricket League"
-                    />
-                    {fieldHint('team_name')}
-                </label>
+            <form onSubmit={handleSubmit} className="form-stack create-tournament-form ui-panel" noValidate>
+                {step === 0 && (
+                    <>
+                        <label className={fieldClass('team_name')}>
+                            <FormLabel icon="🏆" required>Tournament Name</FormLabel>
+                            <input
+                                value={form.team_name}
+                                onChange={(e) => update('team_name', e.target.value)}
+                                placeholder="Summer Cricket League"
+                            />
+                            {fieldHint('team_name')}
+                        </label>
 
-                <button
-                    type="button"
-                    className="btn btn-location btn-location-block"
-                    onClick={getLocation}
-                    disabled={locating}
-                >
-                    {locating ? '...' : '📍'}
-                    <span>{locating ? 'Getting your location...' : 'Get Location'}</span>
-                </button>
+                        <label className={fieldClass('sports_category_id')}>
+                            <FormLabel icon="🏅" required>Sport Category</FormLabel>
+                            <select
+                                value={form.sports_category_id}
+                                onChange={(e) => update('sports_category_id', e.target.value)}
+                                className="select"
+                            >
+                                <option value="">Select sport</option>
+                                {categories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                ))}
+                            </select>
+                            {fieldHint('sports_category_id')}
+                        </label>
 
-                <div className="field-row">
-                    <label className={fieldClass('state')}>
-                        <FormLabel icon="🗺️" required>State</FormLabel>
-                        <select
-                            value={form.state}
-                            onChange={(e) => update('state', e.target.value)}
-                            className="select"
+                        <div className="field-row">
+                            <label className={fieldClass('start_date')}>
+                                <FormLabel icon="📅" required>Start Date</FormLabel>
+                                <input
+                                    type="date"
+                                    value={form.start_date}
+                                    onChange={(e) => update('start_date', e.target.value)}
+                                />
+                                {fieldHint('start_date')}
+                            </label>
+                            <label className={fieldClass('winning_date')}>
+                                <FormLabel icon="🏁" required>Winning Date</FormLabel>
+                                <input
+                                    type="date"
+                                    value={form.winning_date}
+                                    onChange={(e) => update('winning_date', e.target.value)}
+                                />
+                                {fieldHint('winning_date')}
+                            </label>
+                        </div>
+
+                        <div className="field-row">
+                            <label className={fieldClass('slot_count')}>
+                                <FormLabel icon="👥" required>Slots</FormLabel>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    value={form.slot_count}
+                                    onChange={(e) => update('slot_count', e.target.value)}
+                                />
+                                {fieldHint('slot_count')}
+                            </label>
+                            <label className={fieldClass('entry_fee')}>
+                                <FormLabel icon="💰" required>Entry Fee (₹)</FormLabel>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={form.entry_fee}
+                                    onChange={(e) => update('entry_fee', e.target.value)}
+                                />
+                                {fieldHint('entry_fee')}
+                            </label>
+                        </div>
+                    </>
+                )}
+
+                {step === 1 && (
+                    <>
+                        <button
+                            type="button"
+                            className="btn btn-location btn-location-block"
+                            onClick={getLocation}
+                            disabled={locating}
                         >
-                            <option value="">Select state</option>
-                            {INDIAN_STATES.map((state) => (
-                                <option key={state} value={state}>{state}</option>
-                            ))}
-                            {form.state && !INDIAN_STATES.includes(form.state) && (
-                                <option value={form.state}>{form.state}</option>
-                            )}
-                        </select>
-                        {fieldHint('state')}
-                    </label>
-                    <label className={fieldClass('city')}>
-                        <FormLabel icon="🏙️" required>City</FormLabel>
-                        <input
-                            value={form.city}
-                            onChange={(e) => update('city', e.target.value)}
-                            placeholder="e.g. Mumbai"
-                        />
-                        {fieldHint('city')}
-                    </label>
+                            {locating ? '...' : '📍'}
+                            <span>{locating ? 'Getting your location...' : 'Get Location'}</span>
+                        </button>
+
+                        <div className="field-row">
+                            <label className={fieldClass('state')}>
+                                <FormLabel icon="🗺️" required>State</FormLabel>
+                                <select
+                                    value={form.state}
+                                    onChange={(e) => update('state', e.target.value)}
+                                    className="select"
+                                >
+                                    <option value="">Select state</option>
+                                    {INDIAN_STATES.map((state) => (
+                                        <option key={state} value={state}>{state}</option>
+                                    ))}
+                                    {form.state && !INDIAN_STATES.includes(form.state) && (
+                                        <option value={form.state}>{form.state}</option>
+                                    )}
+                                </select>
+                                {fieldHint('state')}
+                            </label>
+                            <label className={fieldClass('city')}>
+                                <FormLabel icon="🏙️" required>City</FormLabel>
+                                <input
+                                    value={form.city}
+                                    onChange={(e) => update('city', e.target.value)}
+                                    placeholder="e.g. Mumbai"
+                                />
+                                {fieldHint('city')}
+                            </label>
+                        </div>
+
+                        <div className="field-row">
+                            <label className={fieldClass('district')}>
+                                <FormLabel icon="📍" required>District</FormLabel>
+                                <input
+                                    value={form.district}
+                                    onChange={(e) => update('district', e.target.value)}
+                                    placeholder="e.g. Pune"
+                                />
+                                {fieldHint('district')}
+                            </label>
+                            <label className={fieldClass('pincode')}>
+                                <FormLabel icon="📮" required>Pincode</FormLabel>
+                                <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    maxLength={6}
+                                    value={form.pincode}
+                                    onChange={(e) => update('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                    placeholder="6-digit PIN"
+                                />
+                                {fieldHint('pincode')}
+                            </label>
+                        </div>
+
+                        <label className="field">
+                            <FormLabel icon="🗺️">Venue / Landmark Details</FormLabel>
+                            <textarea
+                                value={form.location_details}
+                                onChange={(e) => update('location_details', e.target.value)}
+                                placeholder="Stadium name, landmark, directions..."
+                                rows={2}
+                            />
+                        </label>
+                    </>
+                )}
+
+                {step === 2 && (
+                    <>
+                        <div className="field">
+                            <FormLabel icon="🖼️">Cover Image</FormLabel>
+                            <div
+                                className={`cover-upload${coverPreview ? ' has-preview' : ''}`}
+                                onClick={() => coverInputRef.current?.click()}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => e.key === 'Enter' && coverInputRef.current?.click()}
+                            >
+                                <input
+                                    ref={coverInputRef}
+                                    type="file"
+                                    accept={ACCEPTED_COVER_TYPES}
+                                    onChange={handleCoverChange}
+                                    className="file-input-hidden"
+                                />
+                                {coverPreview ? (
+                                    <img src={coverPreview} alt="Cover preview" className="cover-upload-preview" />
+                                ) : (
+                                    <div className="cover-upload-empty">
+                                        <span>📷</span>
+                                        <strong>Upload cover photo</strong>
+                                        <small>JPG, PNG, WEBP · max 5 MB · stored on S3 when configured</small>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className={fieldClass('template_file')}>
+                            <FormLabel icon="📎" required>Tournament Template</FormLabel>
+                            <div
+                                className={`file-upload${templateFile ? ' has-file' : ''}${showFieldErrors && fieldErrors.template_file ? ' field-invalid' : ''}`}
+                                onClick={() => fileInputRef.current?.click()}
+                                role="button"
+                                tabIndex={0}
+                                onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
+                            >
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept={ACCEPTED_TEMPLATE_TYPES}
+                                    onChange={handleTemplateChange}
+                                    className="file-input-hidden"
+                                />
+                                {templateFile ? (
+                                    <>
+                                        <span className="file-upload-icon">✅</span>
+                                        <span className="file-upload-name">{templateFile.name}</span>
+                                        <span className="file-upload-hint">
+                                            {(templateFile.size / 1024).toFixed(1)} KB — tap to change
+                                        </span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="file-upload-icon">📤</span>
+                                        <span className="file-upload-name">Upload template</span>
+                                        <span className="file-upload-hint">PDF, DOC, DOCX, PNG, JPG (max 10 MB)</span>
+                                    </>
+                                )}
+                            </div>
+                            {fieldHint('template_file')}
+                        </div>
+                    </>
+                )}
+
+                {step === 3 && (
+                    <>
+                        <label className={fieldClass('rules')}>
+                            <FormLabel icon="📜" required>Rules</FormLabel>
+                            <textarea
+                                value={form.rules}
+                                onChange={(e) => update('rules', e.target.value)}
+                                placeholder="Tournament rules and regulations..."
+                                rows={4}
+                            />
+                            {fieldHint('rules')}
+                        </label>
+
+                        <label className="field">
+                            <FormLabel icon="🎁">Prize Details</FormLabel>
+                            <textarea
+                                value={form.price_details}
+                                onChange={(e) => update('price_details', e.target.value)}
+                                placeholder="Winner prize, runner-up, trophies..."
+                                rows={3}
+                            />
+                        </label>
+
+                        <label className="field">
+                            <FormLabel icon="⚽">Ball Type</FormLabel>
+                            <input
+                                value={form.ball_type}
+                                onChange={(e) => update('ball_type', e.target.value)}
+                                placeholder="e.g. Tennis ball, Leather ball"
+                            />
+                        </label>
+                    </>
+                )}
+
+                <div className="create-form-actions">
+                    {step > 0 && (
+                        <button type="button" className="btn btn-outline" onClick={goBack} disabled={loading}>
+                            Back
+                        </button>
+                    )}
+                    {step < STEPS.length - 1 ? (
+                        <button type="button" className="btn btn-primary" onClick={goNext} disabled={locating}>
+                            Continue
+                        </button>
+                    ) : (
+                        <button type="submit" className="btn btn-primary" disabled={loading || locating}>
+                            {loading ? 'Creating...' : 'Create Tournament'}
+                        </button>
+                    )}
                 </div>
-
-                <div className="field-row">
-                    <label className={fieldClass('district')}>
-                        <FormLabel icon="📍" required>District</FormLabel>
-                        <input
-                            value={form.district}
-                            onChange={(e) => update('district', e.target.value)}
-                            placeholder="e.g. Pune"
-                        />
-                        {fieldHint('district')}
-                    </label>
-                    <label className={fieldClass('pincode')}>
-                        <FormLabel icon="📮" required>Pincode</FormLabel>
-                        <input
-                            type="text"
-                            inputMode="numeric"
-                            maxLength={6}
-                            value={form.pincode}
-                            onChange={(e) => update('pincode', e.target.value.replace(/\D/g, '').slice(0, 6))}
-                            placeholder="6-digit PIN"
-                        />
-                        {fieldHint('pincode')}
-                    </label>
-                </div>
-
-                <label className="field">
-                    <FormLabel icon="🗺️">Venue / Landmark Details</FormLabel>
-                    <textarea
-                        value={form.location_details}
-                        onChange={(e) => update('location_details', e.target.value)}
-                        placeholder="Stadium name, landmark, directions..."
-                        rows={2}
-                    />
-                </label>
-
-                <label className={fieldClass('sports_category_id')}>
-                    <FormLabel icon="🏅" required>Sport Category</FormLabel>
-                    <select
-                        value={form.sports_category_id}
-                        onChange={(e) => update('sports_category_id', e.target.value)}
-                        className="select"
-                    >
-                        <option value="">Select sport</option>
-                        {categories.map((cat) => (
-                            <option key={cat.id} value={cat.id}>{cat.name}</option>
-                        ))}
-                    </select>
-                    {fieldHint('sports_category_id')}
-                </label>
-
-                <div className="field-row">
-                    <label className={fieldClass('start_date')}>
-                        <FormLabel icon="📅" required>Start Date</FormLabel>
-                        <input
-                            type="date"
-                            value={form.start_date}
-                            onChange={(e) => update('start_date', e.target.value)}
-                        />
-                        {fieldHint('start_date')}
-                    </label>
-                    <label className={fieldClass('winning_date')}>
-                        <FormLabel icon="🏁" required>Winning Date</FormLabel>
-                        <input
-                            type="date"
-                            value={form.winning_date}
-                            onChange={(e) => update('winning_date', e.target.value)}
-                        />
-                        {fieldHint('winning_date')}
-                    </label>
-                </div>
-
-                <div className="field-row">
-                    <label className={fieldClass('slot_count')}>
-                        <FormLabel icon="👥" required>Slots</FormLabel>
-                        <input
-                            type="number"
-                            min="1"
-                            value={form.slot_count}
-                            onChange={(e) => update('slot_count', e.target.value)}
-                        />
-                        {fieldHint('slot_count')}
-                    </label>
-                    <label className={fieldClass('entry_fee')}>
-                        <FormLabel icon="💰" required>Entry Fee (₹)</FormLabel>
-                        <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={form.entry_fee}
-                            onChange={(e) => update('entry_fee', e.target.value)}
-                        />
-                        {fieldHint('entry_fee')}
-                    </label>
-                </div>
-
-                <label className={fieldClass('rules')}>
-                    <FormLabel icon="📜" required>Rules</FormLabel>
-                    <textarea
-                        value={form.rules}
-                        onChange={(e) => update('rules', e.target.value)}
-                        placeholder="Tournament rules and regulations..."
-                        rows={4}
-                    />
-                    {fieldHint('rules')}
-                </label>
-
-                <div className={fieldClass('template_file')}>
-                    <FormLabel icon="📎" required>Tournament Template</FormLabel>
-                    <div
-                        className={`file-upload${templateFile ? ' has-file' : ''}${showFieldErrors && fieldErrors.template_file ? ' field-invalid' : ''}`}
-                        onClick={() => fileInputRef.current?.click()}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => e.key === 'Enter' && fileInputRef.current?.click()}
-                    >
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept={ACCEPTED_TEMPLATE_TYPES}
-                            onChange={handleTemplateChange}
-                            className="file-input-hidden"
-                        />
-                        {templateFile ? (
-                            <>
-                                <span className="file-upload-icon">✅</span>
-                                <span className="file-upload-name">{templateFile.name}</span>
-                                <span className="file-upload-hint">
-                                    {(templateFile.size / 1024).toFixed(1)} KB — tap to change
-                                </span>
-                            </>
-                        ) : (
-                            <>
-                                <span className="file-upload-icon">📤</span>
-                                <span className="file-upload-name">Upload template</span>
-                                <span className="file-upload-hint">PDF, DOC, DOCX, PNG, JPG (max 10 MB)</span>
-                            </>
-                        )}
-                    </div>
-                    {fieldHint('template_file')}
-                </div>
-
-                <label className="field">
-                    <FormLabel icon="⚽">Ball Type</FormLabel>
-                    <input
-                        value={form.ball_type}
-                        onChange={(e) => update('ball_type', e.target.value)}
-                        placeholder="e.g. Tennis ball, Leather ball"
-                    />
-                </label>
-
-                <button type="submit" className="btn btn-primary btn-block" disabled={loading || locating}>
-                    {loading ? 'Creating...' : 'Create Tournament'}
-                </button>
             </form>
         </div>
     );

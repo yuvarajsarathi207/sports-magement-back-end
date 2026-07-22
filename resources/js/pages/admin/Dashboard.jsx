@@ -6,9 +6,11 @@ import CategoryFilter from '../../components/CategoryFilter';
 import StatusStats from '../../components/StatusStats';
 import LoaderScreen from '../../components/LoaderScreen';
 import { tournamentBadge } from '../../utils/tournamentStatus';
+import { useModule } from '../../context/ModuleContext';
 
 export default function AdminDashboard() {
     const navigate = useNavigate();
+    const { features } = useModule();
     const [data, setData] = useState({ stats: {}, category_stats: [], pending_tournaments: [] });
     const [categoryId, setCategoryId] = useState('');
     const [loading, setLoading] = useState(true);
@@ -35,8 +37,13 @@ export default function AdminDashboard() {
 
     return (
         <div className="page">
-            <button type="button" className="btn btn-primary btn-block" style={{ marginBottom: 16 }} onClick={() => navigate('/admin/shop')}>
-                Open Shop Admin
+            {features.shop && (
+                <button type="button" className="btn btn-primary btn-block" style={{ marginBottom: 16 }} onClick={() => navigate('/admin/shop')}>
+                    Open Shop Admin
+                </button>
+            )}
+            <button type="button" className="btn btn-outline btn-block" style={{ marginBottom: 16 }} onClick={() => navigate('/admin/settings')}>
+                App settings
             </button>
             <StatusStats items={statusItems} />
 

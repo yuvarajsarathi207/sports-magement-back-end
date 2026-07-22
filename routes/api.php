@@ -18,6 +18,7 @@ use App\Http\Controllers\Shop\AddressController;
 use App\Http\Controllers\Shop\OrderController;
 use App\Http\Controllers\Shop\PaymentController;
 use App\Http\Controllers\Shop\AdminShopController;
+use App\Http\Controllers\SettingsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,6 +34,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::get('/sports-categories', [SportsCategoryController::class, 'index']);
+Route::get('/settings', [SettingsController::class, 'publicIndex']);
 
 // Public shop catalogue
 Route::prefix('shop')->group(function () {
@@ -71,6 +73,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/shop/customers/{id}/reset-password', [AdminShopController::class, 'resetPassword']);
         Route::get('/shop/reports', [AdminShopController::class, 'reports']);
         Route::post('/shop/tournaments/{id}/feature', [AdminShopController::class, 'featureTournament']);
+        Route::get('/settings', [SettingsController::class, 'adminIndex']);
+        Route::put('/settings', [SettingsController::class, 'adminUpdate']);
 
         Route::post('/shop/categories', [CategoryController::class, 'store']);
         Route::put('/shop/categories/{id}', [CategoryController::class, 'update']);

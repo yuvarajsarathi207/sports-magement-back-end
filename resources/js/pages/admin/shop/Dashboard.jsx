@@ -35,6 +35,7 @@ export default function AdminShopDashboard() {
                 <Link to="/admin/shop/orders" className="list-menu-item">Orders ({s.pending_orders} pending)</Link>
                 <Link to="/admin/shop/customers" className="list-menu-item">Users</Link>
                 <Link to="/admin/shop/reports" className="list-menu-item">Reports</Link>
+                <Link to="/admin/settings" className="list-menu-item">Settings</Link>
             </div>
 
             <section className="section">

@@ -1,11 +1,14 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
+import { useSettings } from './context/SettingsContext';
+import { featuresFromSettings, roleHome } from './utils/navigation';
 import Layout from './components/Layout';
 import LoaderScreen from './components/LoaderScreen';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import Terms from './pages/auth/Terms';
+import Privacy from './pages/auth/Privacy';
 import ShopHome from './pages/shop/Home';
 import ProductList from './pages/shop/ProductList';
 import ProductDetail from './pages/shop/ProductDetail';
@@ -35,15 +38,11 @@ import AdminBanners from './pages/admin/shop/Banners';
 import AdminOrders from './pages/admin/shop/Orders';
 import AdminCustomers from './pages/admin/shop/Customers';
 import AdminReports from './pages/admin/shop/Reports';
-
-function roleHome(role) {
-    if (role === 'organizer') return '/organizer';
-    if (role === 'admin' || role === 'super_admin') return '/admin/shop';
-    return '/';
-}
+import AdminSettings from './pages/admin/shop/Settings';
 
 function ProtectedRoute({ children, role, roles }) {
     const { user, loading } = useAuth();
+    const { settings } = useSettings();
 
     if (loading) {
         return <LoaderScreen message="Starting app..." fullScreen />;
@@ -55,7 +54,7 @@ function ProtectedRoute({ children, role, roles }) {
 
     const allowed = roles || (role ? [role] : null);
     if (allowed && !allowed.includes(user.role)) {
-        return <Navigate to={roleHome(user.role)} replace />;
+        return <Navigate to={roleHome(user.role, featuresFromSettings(settings))} replace />;
     }
 
     return children;
@@ -63,13 +62,14 @@ function ProtectedRoute({ children, role, roles }) {
 
 function GuestRoute({ children }) {
     const { user, loading } = useAuth();
+    const { settings } = useSettings();
 
     if (loading) {
         return <LoaderScreen message="Starting app..." fullScreen />;
     }
 
     if (user) {
-        return <Navigate to={roleHome(user.role)} replace />;
+        return <Navigate to={roleHome(user.role, featuresFromSettings(settings))} replace />;
     }
 
     return children;
@@ -82,6 +82,12 @@ function AuthOnly({ children }) {
     return children;
 }
 
+function AdminIndexRedirect() {
+    const { settings, loading } = useSettings();
+    if (loading) return <LoaderScreen message="Starting app..." />;
+    return <Navigate to={roleHome('admin', featuresFromSettings(settings))} replace />;
+}
+
 export default function AppRouter() {
     return (
         <Routes>
@@ -89,6 +95,7 @@ export default function AppRouter() {
             <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
             <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
 
             {/* Public e-commerce shell — works without login */}
             <Route path="/" element={<Layout role="shop" title="Store" />}>
@@ -118,12 +125,14 @@ export default function AppRouter() {
                 <Route path="tournaments" element={<OrganizerTournaments />} />
                 <Route path="tournaments/new" element={<OrganizerCreateTournament />} />
                 <Route path="tournaments/:id" element={<OrganizerTournamentDetail />} />
+                <Route path="profile" element={<ShopProfile />} />
             </Route>
 
             <Route path="/admin" element={<ProtectedRoute roles={['admin', 'super_admin']}><Layout role="admin" /></ProtectedRoute>}>
-                <Route index element={<Navigate to="/admin/shop" replace />} />
+                <Route index element={<AdminIndexRedirect />} />
                 <Route path="tournaments" element={<AdminTournaments />} />
                 <Route path="tournaments/:id" element={<AdminTournamentDetail />} />
+                <Route path="settings" element={<AdminSettings />} />
                 <Route path="shop" element={<AdminShopDashboard />} />
                 <Route path="shop/products" element={<AdminProducts />} />
                 <Route path="shop/categories" element={<AdminCategories />} />
@@ -132,6 +141,8 @@ export default function AppRouter() {
                 <Route path="shop/orders/:id" element={<AdminOrders />} />
                 <Route path="shop/customers" element={<AdminCustomers />} />
                 <Route path="shop/reports" element={<AdminReports />} />
+                <Route path="shop/settings" element={<Navigate to="/admin/settings" replace />} />
+                <Route path="profile" element={<ShopProfile />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />

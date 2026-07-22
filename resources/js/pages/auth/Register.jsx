@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
+import { featuresFromSettings, roleHome } from '../../utils/navigation';
 import Alert from '../../components/Alert';
 import FormField from '../../components/FormField';
 
@@ -21,6 +23,7 @@ const ROLES = [
 
 export default function Register() {
     const { register } = useAuth();
+    const { settings } = useSettings();
     const navigate = useNavigate();
     const [form, setForm] = useState({
         name: '',
@@ -47,7 +50,7 @@ export default function Register() {
         setLoading(true);
         try {
             const user = await register(form);
-            navigate(user.role === 'organizer' ? '/organizer' : '/');
+            navigate(roleHome(user.role, featuresFromSettings(settings)));
         } catch (err) {
             const errors = err.response?.data?.errors;
             const msg = errors
@@ -146,7 +149,7 @@ export default function Register() {
                             I agree to the{' '}
                             <Link to="/terms" target="_blank" rel="noopener noreferrer">Terms & Conditions</Link>
                             {' '}and{' '}
-                            <Link to="/terms#privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>
+                            <Link to="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>
                         </span>
                     </label>
 

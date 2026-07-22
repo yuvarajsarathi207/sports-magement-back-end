@@ -3,6 +3,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { SettingsProvider } from './context/SettingsContext';
 import { ModuleProvider } from './context/ModuleContext';
 import AppRouter from './AppRouter';
 import InstallPrompt from './components/InstallPrompt';
@@ -16,10 +17,12 @@ if (root) {
         <React.StrictMode>
             <BrowserRouter basename="/app">
                 <AuthProvider>
-                    <ModuleProvider>
-                        <InstallPrompt />
-                        <AppRouter />
-                    </ModuleProvider>
+                    <SettingsProvider>
+                        <ModuleProvider>
+                            <InstallPrompt />
+                            <AppRouter />
+                        </ModuleProvider>
+                    </SettingsProvider>
                 </AuthProvider>
             </BrowserRouter>
         </React.StrictMode>
