@@ -385,6 +385,7 @@
                     <p class="text-muted mb-0">
                         We help you organize competitions, manage registrations, and keep everyone informed — whether you run local leagues or larger events.
                     </p>
+                    <p class="text-muted mb-0">Our services starts from 5K - 1L as per client requirements</p>
                 </div>
             </div>
             <div class="row g-3 g-lg-4">
