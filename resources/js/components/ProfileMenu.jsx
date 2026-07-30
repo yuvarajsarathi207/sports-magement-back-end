@@ -12,6 +12,12 @@ function profilePathFor(role, features) {
 }
 
 /** Header avatar opens the profile page (no popup). */
+function profilePathFor(role) {
+    if (role === 'organizer') return '/organizer/profile';
+    if (role === 'admin') return '/admin/profile';
+    return '/profile';
+}
+
 export default function ProfileMenu({ role }) {
     const { user } = useAuth();
     const { features } = useModule();

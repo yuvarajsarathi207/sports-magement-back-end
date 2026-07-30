@@ -9,6 +9,8 @@ import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import Terms from './pages/auth/Terms';
 import Privacy from './pages/auth/Privacy';
+import RefundPolicy from './pages/auth/RefundPolicy';
+import Privacy from './pages/auth/Privacy';
 import ShopHome from './pages/shop/Home';
 import ProductList from './pages/shop/ProductList';
 import ProductDetail from './pages/shop/ProductDetail';
@@ -96,6 +98,8 @@ export default function AppRouter() {
             <Route path="/forgot-password" element={<GuestRoute><ForgotPassword /></GuestRoute>} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/refund-policy" element={<RefundPolicy />} />
+            <Route path="/privacy" element={<Privacy />} />
 
             {/* Public e-commerce shell — works without login */}
             <Route path="/" element={<Layout role="shop" title="Store" />}>
@@ -126,12 +130,14 @@ export default function AppRouter() {
                 <Route path="tournaments/new" element={<OrganizerCreateTournament />} />
                 <Route path="tournaments/:id" element={<OrganizerTournamentDetail />} />
                 <Route path="profile" element={<ShopProfile />} />
+                <Route path="profile" element={<PlayerProfile />} />
             </Route>
 
             <Route path="/admin" element={<ProtectedRoute roles={['admin', 'super_admin']}><Layout role="admin" /></ProtectedRoute>}>
                 <Route index element={<AdminIndexRedirect />} />
                 <Route path="tournaments" element={<AdminTournaments />} />
                 <Route path="tournaments/:id" element={<AdminTournamentDetail />} />
+                <Route path="profile" element={<PlayerProfile />} />
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="shop" element={<AdminShopDashboard />} />
                 <Route path="shop/products" element={<AdminProducts />} />

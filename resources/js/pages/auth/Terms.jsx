@@ -1,148 +1,102 @@
-import { Link, useNavigate } from 'react-router-dom';
+import LegalPageLayout from '../../components/LegalPageLayout';
 
 export default function Terms() {
     const navigate = useNavigate();
 
     return (
-        <div className="page terms-page">
-            <button type="button" className="back-btn" onClick={() => navigate(-1)}>← Back</button>
-
-            <h1 className="terms-title">Terms & Conditions</h1>
-            <p className="terms-updated">Platform: https://keepplaying.in/</p>
-            <p className="terms-nav-links">
-                <Link to="/privacy">Privacy Policy</Link>
+        <LegalPageLayout title="Terms & Conditions" active="terms">
+            <p className="legal-intro">
+                These Terms and Conditions govern your use of this website and the purchase of products or services offered
+                herein. By accessing or using this website, you agree to be bound by these terms. Please read them carefully.
             </p>
 
-<section className="terms-section">
+            <section className="legal-section">
+                <h2>1. General Use</h2>
+                <ul className="legal-list">
+                    <li>
+                        By using this website, you confirm that you are at least 18 years old or are using the website under
+                        the supervision of a parent or legal guardian.
+                    </li>
+                    <li>
+                        All content on this website is for informational purposes only and is subject to change without notice.
+                    </li>
+                </ul>
+            </section>
+
+            <section className="legal-section">
+                <h2>2. User Responsibilities</h2>
+                <ul className="legal-list">
+                    <li>
+                        Users agree not to misuse the website by knowingly introducing viruses, trojans, or other malicious
+                        material.
+                    </li>
+                    <li>
+                        You must not attempt to gain unauthorized access to the server, database, or any part of the site.
+                    </li>
+                </ul>
+            </section>
+
+            <section className="legal-section">
+                <h2>3. Product &amp; Service Descriptions</h2>
                 <p>
-                    1. This document is an electronic record in terms of Information Technology Act, 2000 and rules
-                    there under as applicable and the amended provisions pertaining to electronic records in various
-                    statutes as amended by the Information Technology Act, 2000. This electronic record is generated
-                    by a computer system and does not require any physical or digital signatures.
+                    All efforts are made to ensure accuracy in product descriptions, images, pricing, and availability.
+                    However, we do not warrant that product descriptions or other content are complete, current, or error-free.
                 </p>
             </section>
 
-            <section className="terms-section">
+            <section className="legal-section">
+                <h2>4. Order Acceptance &amp; Cancellation</h2>
                 <p>
-                    2. This document is published in accordance with the provisions of Rule 3 (1) of the Information
-                    Technology (Intermediaries guidelines) Rules, 2011 that require publishing the rules and
-                    regulations, privacy policy and Terms of Use for access or usage of domain name
-                    https://keepplaying.in/ (&apos;Website&apos;), including the related mobile site and mobile application
-                    (hereinafter referred to as &apos;Platform&apos;).
+                    Placing an order on this website does not constitute a confirmed order. We reserve the right to refuse or
+                    cancel any order for reasons including but not limited to product availability, pricing errors, or suspected
+                    fraud.
                 </p>
             </section>
 
-            <section className="terms-section">
+            <section className="legal-section">
+                <h2>5. Pricing and Payment</h2>
+                <ul className="legal-list">
+                    <li>
+                        All prices are displayed in INR or the local currency and are inclusive or exclusive of taxes as
+                        indicated.
+                    </li>
+                    <li>
+                        Payments must be made through secure and approved payment gateways. The website is not liable for any
+                        payment gateway errors.
+                    </li>
+                </ul>
+            </section>
+
+            <section className="legal-section">
+                <h2>6. Intellectual Property</h2>
                 <p>
-                    3. The Platform is owned by 9952914715, a company incorporated under the Companies Act, 1956
-                    with its registered office at 20kamaraj street (hereinafter referred to as &apos;Platform Owner&apos;, &apos;we&apos;,
-                    &apos;us&apos;, &apos;our&apos;).
+                    All text, graphics, logos, images, and other materials on this website are the intellectual property of their
+                    respective owners and protected by copyright and trademark laws. Unauthorized use or duplication of any
+                    materials is prohibited.
                 </p>
             </section>
 
-            <section className="terms-section">
+            <section className="legal-section">
+                <h2>7. Limitation of Liability</h2>
                 <p>
-                    4. Your use of the Platform and services and tools are governed by the following terms and
-                    conditions (&quot;Terms of Use&quot;) as applicable to the Platform including the applicable policies which
-                    are incorporated herein by way of reference. If You transact on the Platform, You shall be subject
-                    to the policies that are applicable to the Platform for such transaction. By mere use of the Platform,
-                    You shall be contracting with the Platform Owner and these terms and conditions including the
-                    policies constitute Your binding obligations, with Platform Owner. These Terms of Use relate to
-                    your use of our website, goods (as applicable) or services (as applicable) (collectively, &apos;Services&apos;).
-                    Any terms and conditions proposed by You which are in addition to or which conflict with these
-                    Terms of Use are expressly rejected by the Platform Owner and shall be of no force or effect.
-                    These Terms of Use can be modified at any time without assigning any reason. It is your
-                    responsibility to periodically review these Terms of Use to stay informed of updates.
+                    We are not responsible for any indirect or consequential damages that may arise from the use or inability to
+                    use the website or the products purchased through it. Liability is limited to the value of the product
+                    purchased, if applicable.
                 </p>
             </section>
 
-            <section className="terms-section">
+            <section className="legal-section">
+                <h2>8. Modifications to Terms</h2>
                 <p>
-                    5. For the purpose of these Terms of Use, wherever the context so requires &apos;you&apos;, &apos;your&apos; or &apos;user&apos; shall
-                    mean any natural or legal person who has agreed to become a user/buyer on the Platform.
+                    These terms may be revised at any time without prior notice. Continued use of the site after changes implies
+                    acceptance of those changes.
                 </p>
             </section>
 
-            <section className="terms-section">
-                <p>
-                    6. ACCESSING, BROWSING OR OTHERWISE USING THE PLATFORM INDICATES YOUR
-                    AGREEMENT TO ALL THE TERMS AND CONDITIONS UNDER THESE TERMS OF USE,
-                    SO PLEASE READ THE TERMS OF USE CAREFULLY BEFORE PROCEEDING.
-                </p>
+            <section className="legal-section">
+                <h2>9. Governing Law</h2>
+                <p>These terms shall be governed by and construed in accordance with the laws of India.</p>
             </section>
-
-            <section className="terms-section">
-                <h2>7. Terms of Use</h2>
-                <p>The use of Platform and/or availing of our Services is subject to the following Terms of Use:</p>
-                <ol className="terms-list">
-                    <li>
-                        To access and use the Services, you agree to provide true, accurate and complete information
-                        to us during and after registration, and you shall be responsible for all acts done through the
-                        use of your registered account on the Platform.
-                    </li>
-                    <li>
-                        Neither we nor any third parties provide any warranty or guarantee as to the accuracy,
-                        timeliness, performance, completeness or suitability of the information and materials offered
-                        on this website or through the Services, for any specific purpose. You acknowledge that such
-                        information and materials may contain inaccuracies or errors and we expressly exclude
-                        liability for any such inaccuracies or errors to the fullest extent permitted by law.
-                    </li>
-                    <li>
-                        Your use of our Services and the Platform is solely and entirely at your own risk and
-                        discretion for which we shall not be liable to you in any manner. You are required to
-                        independently assess and ensure that the Services meet your requirements.
-                    </li>
-                    <li>
-                        The contents of the Platform and the Services are proprietary to us and are licensed to us.
-                        You will not have any authority to claim any intellectual property rights, title, or interest in
-                        its contents. The contents includes and is not limited to the design, layout, look and graphics.
-                    </li>
-                    <li>
-                        You acknowledge that unauthorized use of the Platform and/or the Services may lead to
-                        action against you as per these Terms of Use and/or applicable laws.
-                    </li>
-                    <li>You agree to pay us the charges associated with availing the Services.</li>
-                    <li>
-                        You agree not to use the Platform and/or Services for any purpose that is unlawful, illegal or
-                        forbidden by these Terms, or Indian or local laws that might apply to you.
-                    </li>
-                    <li>
-                        You agree and acknowledge that website and the Services may contain links to other third
-                        party websites. On accessing these links, you will be governed by the terms of use, privacy
-                        policy and such other policies of such third party websites. These links are provided for your
-                        convenience for provide further information.
-                    </li>
-                    <li>
-                        You understand that upon initiating a transaction for availing the Services you are entering
-                        into a legally binding and enforceable contract with the Platform Owner for the Services.
-                    </li>
-                    <li>
-                        You shall indemnify and hold harmless Platform Owner, its affiliates, group companies (as
-                        applicable) and their respective officers, directors, agents, and employees, from any claim or
-                        demand, or actions including reasonable attorney&apos;s fees, made by any third party or penalty
-                        imposed due to or arising out of Your breach of this Terms of Use, privacy Policy and other
-                        Policies, or Your violation of any law, rules or regulations or the rights (including
-                        infringement of intellectual property rights) of a third party.
-                    </li>
-                    <li>
-                        Notwithstanding anything contained in these Terms of Use, the parties shall not be liable for
-                        any failure to perform an obligation under these Terms if performance is prevented or
-                        delayed by a force majeure event.
-                    </li>
-                    <li>
-                        These Terms and any dispute or claim relating to it, or its enforceability, shall be governed
-                        by and construed in accordance with the laws of India.
-                    </li>
-                    <li>
-                        All disputes arising out of or in connection with these Terms shall be subject to the exclusive
-                        jurisdiction of the courts in India.
-                    </li>
-                    <li>
-                        All concerns or communications relating to these Terms must be communicated to us using
-                        the contact information provided on this website.
-                    </li>
-                </ol>
-            </section>
-        </div>
+        </LegalPageLayout>
     );
 }

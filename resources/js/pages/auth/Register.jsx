@@ -149,7 +149,9 @@ export default function Register() {
                             I agree to the{' '}
                             <Link to="/terms" target="_blank" rel="noopener noreferrer">Terms & Conditions</Link>
                             {' '}and{' '}
-                            <Link to="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</Link>
+                            <Link to="/privacy" target="_blank" rel="noopener noreferrer">
+                                Privacy Policy
+                            </Link>
                         </span>
                     </label>
 
