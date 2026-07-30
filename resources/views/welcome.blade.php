@@ -506,6 +506,7 @@
                         <li><a href="#contact">Contact</a></li>
                         <li><a href="/app/terms">Terms &amp; Conditions</a></li>
                         <li><a href="/app/privacy">Privacy Policy</a></li>
+                        <li><a href="/app/refund-policy">No Refund Policy</a></li>
                     </ul>
                 </div>
                 <div class="col-md-4">

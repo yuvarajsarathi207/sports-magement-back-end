@@ -148,6 +148,14 @@ export default function PlayerProfile() {
                         </span>
                         <span className="profile-link-arrow" aria-hidden>→</span>
                     </Link>
+                    <Link to="/refund-policy" className="profile-link-item">
+                        <span className="profile-link-icon">↩</span>
+                        <span className="profile-link-text">
+                            <strong>No Refund Policy</strong>
+                            <small>Refund rules for purchased services</small>
+                        </span>
+                        <span className="profile-link-arrow" aria-hidden>→</span>
+                    </Link>
                 </div>
             </section>
 

@@ -6,6 +6,7 @@ import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import Terms from './pages/auth/Terms';
 import Privacy from './pages/auth/Privacy';
+import RefundPolicy from './pages/auth/RefundPolicy';
 import PlayerDashboard from './pages/player/Dashboard';
 import PlayerTournaments from './pages/player/Tournaments';
 import PlayerTournamentDetail from './pages/player/TournamentDetail';
@@ -63,6 +64,7 @@ export default function AppRouter() {
             <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/refund-policy" element={<RefundPolicy />} />
 
             <Route path="/" element={<ProtectedRoute role="player"><Layout role="player" /></ProtectedRoute>}>
                 <Route index element={<PlayerDashboard />} />
