@@ -3,488 +3,547 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Keep Playing - Player & Tournament Management Platform</title>
-
-    <!-- Bootstrap 5 CSS -->
+    <title>Keep Playing — Tournaments & Player Management</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/keep-playing-logo.png') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-
     <style>
         :root {
-            --primary-color: #2563eb;
-            --secondary-color: #1e40af;
-            --accent-color: #3b82f6;
+            --primary: #1a9f4a;
+            --primary-dark: #15803d;
+            --primary-deep: #0a0a0a;
+            --brand-green: #1db954;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --surface: #ffffff;
+            --bg: #f0f4f8;
+            --border: #e2e8f0;
+            --radius: 16px;
+            --shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text);
+            background: var(--bg);
         }
 
-        .navbar {
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        .site-nav {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 0;
         }
 
-        .navbar.scrolled {
-            background-color: rgba(255, 255, 255, 0.95) !important;
-            backdrop-filter: blur(10px);
-        }
-
-        .hero-section {
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            color: white;
-            padding: 120px 0 80px;
-            min-height: 100vh;
+        .site-nav .navbar-brand {
+            font-weight: 700;
+            color: var(--primary-deep);
             display: flex;
             align-items: center;
+            gap: 0.5rem;
         }
 
-        .section-padding {
-            padding: 80px 0;
+        .brand-logo {
+            display: block;
+            width: auto;
+            object-fit: contain;
         }
 
-        .service-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        .brand-logo--nav {
+            height: 44px;
+        }
+
+        .brand-logo--hero {
+            width: 100%;
+            max-width: 320px;
+            height: auto;
+            margin: 0 auto;
+        }
+
+        .brand-logo--footer {
+            height: 52px;
+            margin-bottom: 1rem;
+        }
+
+        .site-nav .nav-link {
+            color: var(--text-muted);
+            font-weight: 500;
+            padding: 0.5rem 0.85rem !important;
+            border-radius: 8px;
+            transition: color 0.2s, background 0.2s;
+        }
+
+        .site-nav .nav-link:hover {
+            color: var(--primary);
+            background: rgba(26, 159, 74, 0.08);
+        }
+
+        .btn-brand {
+            background: linear-gradient(135deg, var(--primary-deep) 0%, var(--primary) 100%);
             border: none;
-            border-radius: 15px;
-            height: 100%;
-        }
-
-        .service-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
-        }
-
-        .service-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 20px;
-            color: white;
-            font-size: 2rem;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            border: none;
-            padding: 12px 30px;
-            border-radius: 50px;
-            transition: transform 0.3s ease;
-        }
-
-        .btn-primary:hover {
-            transform: scale(1.05);
-            background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%);
-        }
-
-        .about-section {
-            background-color: #f8f9fa;
-        }
-
-        .contact-section {
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            color: white;
-        }
-
-        .footer {
-            background-color: #1a1a1a;
             color: #fff;
-            padding: 40px 0 20px;
+            font-weight: 600;
+            padding: 0.65rem 1.35rem;
+            border-radius: 999px;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .social-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: rgba(255,255,255,0.1);
-            display: inline-flex;
+        .btn-brand:hover {
+            color: #fff;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(26, 159, 74, 0.35);
+        }
+
+        .btn-outline-brand {
+            border: 2px solid rgba(255, 255, 255, 0.85);
+            color: #fff;
+            font-weight: 600;
+            padding: 0.65rem 1.35rem;
+            border-radius: 999px;
+            background: transparent;
+        }
+
+        .btn-outline-brand:hover {
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            border-color: #fff;
+        }
+
+        .hero {
+            background: linear-gradient(160deg, #000000 0%, #0d1f14 45%, #14532d 100%);
+            color: #fff;
+            padding: 7rem 0 5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 20% 80%, rgba(255,255,255,0.12) 0%, transparent 45%),
+                        radial-gradient(circle at 85% 20%, rgba(255,255,255,0.1) 0%, transparent 40%);
+            pointer-events: none;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            margin-bottom: 1.25rem;
+        }
+
+        .hero h1 {
+            font-size: clamp(1.85rem, 4vw, 2.75rem);
+            font-weight: 800;
+            line-height: 1.15;
+            margin-bottom: 1rem;
+        }
+
+        .hero-lead {
+            font-size: 1.05rem;
+            opacity: 0.92;
+            max-width: 32rem;
+            line-height: 1.65;
+        }
+
+        .hero-visual {
+            background: #000;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: var(--radius);
+            padding: 2rem 1.5rem;
+            text-align: center;
+        }
+
+        .section {
+            padding: 4.5rem 0;
+        }
+
+        .section-label {
+            color: var(--primary);
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-title {
+            font-weight: 800;
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            height: 100%;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: var(--shadow);
+            transform: translateY(-4px);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary-deep), var(--primary));
+            color: #fff;
+            display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 10px;
-            transition: all 0.3s ease;
-            color: white;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .contact-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.75rem;
+            box-shadow: var(--shadow);
+        }
+
+        .contact-info-item {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .contact-info-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .contact-info-item i {
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+            border-radius: 12px;
+            background: var(--bg);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .contact-info-item a {
+            color: var(--primary);
             text-decoration: none;
+            font-weight: 500;
         }
 
-        .social-icon:hover {
-            background-color: rgba(255,255,255,0.2);
-            transform: translateY(-5px);
-            color: white;
+        .contact-info-item a:hover {
+            text-decoration: underline;
         }
 
-        @media (max-width: 768px) {
-            .hero-section {
-                padding: 100px 0 60px;
-                text-align: center;
+        .form-control, .form-control:focus {
+            border-color: var(--border);
+            border-radius: 10px;
+            padding: 0.65rem 0.85rem;
+        }
+
+        .form-control:focus {
+            box-shadow: 0 0 0 3px rgba(26, 159, 74, 0.15);
+            border-color: var(--primary);
+        }
+
+        .site-footer {
+            background: var(--primary-deep);
+            color: rgba(255, 255, 255, 0.85);
+            padding: 3rem 0 1.5rem;
+        }
+
+        .site-footer h5 {
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: #fff;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            margin-top: 2rem;
+            padding-top: 1.25rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.55);
+        }
+
+        @media (max-width: 991px) {
+            .hero {
+                padding: 6rem 0 4rem;
             }
-
-            .section-padding {
-                padding: 60px 0;
+            .hero-visual {
+                margin-top: 2rem;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white fixed-top">
+    <nav class="navbar navbar-expand-lg site-nav fixed-top">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#home">
-                <i class="bi bi-trophy"></i> Keep Playing
+            <a class="navbar-brand" href="#home" aria-label="Keep Playing home">
+                <img
+                    src="{{ asset('images/keep-playing-logo.png') }}"
+                    alt="Keep Playing"
+                    class="brand-logo brand-logo--nav"
+                    width="180"
+                    height="44"
+                >
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link" href="#home">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#features">Features</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#about">About</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#contact">Contact</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link fw-semibold text-primary" href="/app">Open App</a>
+                <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+                    <li class="nav-item"><a class="nav-link" href="#home">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                    <li class="nav-item ms-lg-2">
+                        <a class="btn btn-brand btn-sm" href="/app">Open App</a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section id="home" class="hero-section">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-6">
-                    <h1 class="display-4 fw-bold mb-4">Tournament & Player Management Platform</h1>
-                    <p class="lead mb-4">Manage tournaments, track players, view live scores, and stay updated with rankings. Join thousands of players competing in exciting tournaments.</p>
+    <section id="home" class="hero">
+        <div class="container position-relative">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-7">
+                    <span class="hero-badge">Tournament platform</span>
+                    <h1>Run tournaments and manage players with ease</h1>
+                    <p class="hero-lead mb-4">
+                        Register for events, track schedules, and stay connected with your sports community — all from one place.
+                    </p>
                     <div class="d-flex flex-wrap gap-3">
-                        <a href="/app" class="btn btn-primary btn-lg">
+                        <a href="/app" class="btn btn-brand btn-lg">
                             <i class="bi bi-phone me-2"></i>Open App
                         </a>
-                        <a href="/app/register" class="btn btn-outline-light btn-lg">
-                            <i class="bi bi-person-plus me-2"></i>Register
+                        <a href="/app/register" class="btn btn-outline-brand btn-lg">
+                            <i class="bi bi-person-plus me-2"></i>Create account
                         </a>
                     </div>
                 </div>
-                <div class="col-lg-6 text-center mt-5 mt-lg-0">
-                    <div class="p-5">
-                        <i class="bi bi-trophy" style="font-size: 200px; opacity: 0.3;"></i>
+                <div class="col-lg-5">
+                    <div class="hero-visual">
+                        <img
+                            src="{{ asset('images/keep-playing-logo.png') }}"
+                            alt="Keep Playing"
+                            class="brand-logo brand-logo--hero"
+                            width="320"
+                            height="320"
+                        >
+                        <p class="mt-3 mb-0 small opacity-90">Players · Organizers · Live updates</p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-
-    <!-- Features Section -->
-    <section id="features" class="section-padding">
+    <section id="about" class="section">
         <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold mb-3">Platform Features</h2>
-                <p class="lead text-muted">Everything you need to manage tournaments and track players in one place</p>
-            </div>
-            <div class="row g-4">
-                <div class="col-md-6 col-lg-4">
-                    <div class="card service-card shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="service-icon">
-                                <i class="bi bi-calendar-event"></i>
-                            </div>
-                            <h4 class="card-title fw-bold">Tournament Management</h4>
-                            <p class="card-text text-muted">Create and manage tournaments with ease. Set schedules, brackets, and rules all in one place.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="card service-card shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="service-icon">
-                                <i class="bi bi-person-badge"></i>
-                            </div>
-                            <h4 class="card-title fw-bold">Player Profiles</h4>
-                            <p class="card-text text-muted">Comprehensive player profiles with stats, achievements, and tournament history.</p>
-                        </div>
-                    </div>
-                </div>
-                {{-- <div class="col-md-6 col-lg-4">
-                    <div class="card service-card shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="service-icon">
-                                <i class="bi bi-graph-up"></i>
-                            </div>
-                            <h4 class="card-title fw-bold">Live Scores</h4>
-                            <p class="card-text text-muted">Real-time score updates and match results as they happen during tournaments.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="card service-card shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="service-icon">
-                                <i class="bi bi-trophy-fill"></i>
-                            </div>
-                            <h4 class="card-title fw-bold">Rankings & Leaderboards</h4>
-                            <p class="card-text text-muted">Track player rankings and view leaderboards across different categories and sports.</p>
-                        </div>
-                    </div>
-                </div> --}}
-                <div class="col-md-6 col-lg-4">
-                    <div class="card service-card shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="service-icon">
-                                <i class="bi bi-clipboard-check"></i>
-                            </div>
-                            <h4 class="card-title fw-bold">Easy Registration</h4>
-                            <p class="card-text text-muted">Simple and quick tournament registration process for players and teams.</p>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- <div class="col-md-6 col-lg-4">and
-                    <div class="card service-card shadow-sm">
-                        <div class="card-body text-center p-4">
-                            <div class="service-icon">
-                                <i class="bi bi-bell"></i>
-                            </div>
-                            <h4 class="card-title fw-bold">Notifications</h4>
-                            <p class="card-text text-muted">Stay updated with match schedules, results, and important tournament announcements.</p>
-                        </div>
-                    </div>
-                </div> --}}
-            </div>
-        </div>
-    </section>
-
-    <!-- About Section -->
-    <section id="about" class="section-padding about-section">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-6 mb-5 mb-lg-0">
-                    <h2 class="display-5 fw-bold mb-4">About Keep Playing</h2>
-                    <p class="lead mb-4">We are the premier platform for tournament management and player tracking, connecting athletes and organizers worldwide.</p>
-                    <p class="mb-4">Our platform makes it easy to organize tournaments, track player performance, and engage with the competitive sports community. Join thousands of players and organizers who trust us for their tournament needs.</p>
-                    <div class="row g-4 mt-3">
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h3 class="fw-bold text-danger">500+</h3>
-                                <p class="text-muted">Active Tournaments</p>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h3 class="fw-bold text-danger">10K+</h3>
-                                <p class="text-muted">Registered Players</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="p-4">
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <div class="card border-0 shadow-sm h-100">
-                                    <div class="card-body text-center p-4">
-                                        <i class="bi bi-trophy text-danger" style="font-size: 3rem;"></i>
-                                        <h5 class="mt-3 fw-bold">Multiple Sports</h5>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="card border-0 shadow-sm h-100">
-                                    <div class="card-body text-center p-4">
-                                        <i class="bi bi-people text-danger" style="font-size: 3rem;"></i>
-                                        <h5 class="mt-3 fw-bold">Active Community</h5>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="card border-0 shadow-sm h-100">
-                                    <div class="card-body text-center p-4">
-                                        <i class="bi bi-clock-history text-danger" style="font-size: 3rem;"></i>
-                                        <h5 class="mt-3 fw-bold">Real-Time Updates</h5>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="card border-0 shadow-sm h-100">
-                                    <div class="card-body text-center p-4">
-                                        <i class="bi bi-star text-danger" style="font-size: 3rem;"></i>
-                                        <h5 class="mt-3 fw-bold">Top Rankings</h5>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Contact Section -->
-    <section id="contact" class="section-padding contact-section">
-        <div class="container">
-            <div class="text-center mb-5">
-                <h2 class="display-5 fw-bold mb-3">Get In Touch</h2>
-                <p class="lead">We'd love to hear from you. Send us a message and we'll respond as soon as possible.</p>
-            </div>
-            <div class="row justify-content-center">
+            <div class="row mb-4 mb-lg-5">
                 <div class="col-lg-8">
-                    <div class="card shadow-lg border-0">
-                        <div class="card-body p-5">
-                            <form>
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label for="name" class="form-label">Name</label>
-                                        <input type="text" class="form-control" id="name" placeholder="Your Name" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="email" class="form-label">Email</label>
-                                        <input type="email" class="form-control" id="email" placeholder="your@email.com" required>
-                                    </div>
-                                    <div class="col-12">
-                                        <label for="subject" class="form-label">Subject</label>
-                                        <input type="text" class="form-control" id="subject" placeholder="Subject" required>
-                                    </div>
-                                    <div class="col-12">
-                                        <label for="message" class="form-label">Message</label>
-                                        <textarea class="form-control" id="message" rows="5" placeholder="Your Message" required></textarea>
-                                    </div>
-                                    <div class="col-12">
-                                        <button type="submit" class="btn btn-primary btn-lg w-100">
-                                            <i class="bi bi-send me-2"></i>Send Message
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
+                    <p class="section-label">About us</p>
+                    <h2 class="section-title">Built for players and tournament organizers</h2>
+                    <p class="text-muted mb-0">
+                        We help you organize competitions, manage registrations, and keep everyone informed — whether you run local leagues or larger events.
+                    </p>
+                </div>
+            </div>
+            <div class="row g-3 g-lg-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="bi bi-calendar-event"></i></div>
+                        <h3 class="h6 fw-bold mb-2">Tournaments</h3>
+                        <p class="text-muted small mb-0">Create events and manage schedules in one workflow.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="bi bi-person-badge"></i></div>
+                        <h3 class="h6 fw-bold mb-2">Player profiles</h3>
+                        <p class="text-muted small mb-0">Profiles and history for every participant.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="bi bi-clipboard-check"></i></div>
+                        <h3 class="h6 fw-bold mb-2">Easy signup</h3>
+                        <p class="text-muted small mb-0">Quick registration for players and teams.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="bi bi-people"></i></div>
+                        <h3 class="h6 fw-bold mb-2">Community</h3>
+                        <p class="text-muted small mb-0">Connect athletes and organizers on one platform.</p>
                     </div>
                 </div>
             </div>
-            <div class="row mt-5 text-center">
-                <div class="col-md-4 mb-4 mb-md-0">
-                    <div class="p-4">
-                        <i class="bi bi-geo-alt-fill" style="font-size: 2.5rem;"></i>
-                        <h5 class="mt-3 fw-bold">Address</h5>
-                        <p>123 Sports Avenue<br>City, State 12345</p>
+        </div>
+    </section>
+
+    <section id="contact" class="section bg-white">
+        <div class="container">
+            <div class="row g-4 g-lg-5 align-items-start">
+                <div class="col-lg-5">
+                    <p class="section-label">Contact</p>
+                    <h2 class="section-title">Get in touch</h2>
+                    <p class="text-muted mb-4">Questions about tournaments or the platform? Reach us using the details below.</p>
+                    <div class="contact-card">
+                        <div class="contact-info-item">
+                            <i class="bi bi-geo-alt-fill"></i>
+                            <div>
+                                <strong class="d-block mb-1">Address</strong>
+                                <span class="text-muted">No 3 kanakar st<br>Katpadi<br>Vellore 632007</span>
+                            </div>
+                        </div>
+                        <div class="contact-info-item">
+                            <i class="bi bi-telephone-fill"></i>
+                            <div>
+                                <strong class="d-block mb-1">Phone</strong>
+                                <a href="tel:9444200715">9444200715</a>
+                            </div>
+                        </div>
+                        <div class="contact-info-item">
+                            <i class="bi bi-envelope-fill"></i>
+                            <div>
+                                <strong class="d-block mb-1">Email</strong>
+                                <a href="mailto:pavithravit2000@gmail.com">pavithravit2000@gmail.com</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-4 mb-4 mb-md-0">
-                    <div class="p-4">
-                        <i class="bi bi-telephone-fill" style="font-size: 2.5rem;"></i>
-                        <h5 class="mt-3 fw-bold">Phone</h5>
-                        <p>+1 (555) 123-4567<br>+1 (555) 987-6543</p>
+                <div class="col-lg-7">
+                    <div class="contact-card">
+                        <h3 class="h5 fw-bold mb-3">Send a message</h3>
+                        <form id="contactForm">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label for="name" class="form-label small fw-semibold">Name</label>
+                                    <input type="text" class="form-control" id="name" placeholder="Your name" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="email" class="form-label small fw-semibold">Email</label>
+                                    <input type="email" class="form-control" id="email" placeholder="you@email.com" required>
+                                </div>
+                                <div class="col-12">
+                                    <label for="subject" class="form-label small fw-semibold">Subject</label>
+                                    <input type="text" class="form-control" id="subject" placeholder="How can we help?" required>
+                                </div>
+                                <div class="col-12">
+                                    <label for="message" class="form-label small fw-semibold">Message</label>
+                                    <textarea class="form-control" id="message" rows="4" placeholder="Your message" required></textarea>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-brand">
+                                        <i class="bi bi-send me-2"></i>Send message
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
                     </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="site-footer">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <img
+                        src="{{ asset('images/keep-playing-logo.png') }}"
+                        alt="Keep Playing"
+                        class="brand-logo brand-logo--footer"
+                        width="200"
+                        height="52"
+                    >
+                    <p class="small mb-0">Tournament and player management for your sports community.</p>
                 </div>
                 <div class="col-md-4">
-                    <div class="p-4">
-                        <i class="bi bi-envelope-fill" style="font-size: 2.5rem;"></i>
-                        <h5 class="mt-3 fw-bold">Email</h5>
-                        <p>info@tournamenthub.com<br>support@tournamenthub.com</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-4 mb-4 mb-lg-0">
-                    <h5 class="fw-bold mb-3">
-                        <i class="bi bi-trophy me-2"></i>Keep Playing
-                    </h5>
-                    <p class="text-muted">The premier platform for tournament management and player tracking. Connect, compete, and excel.</p>
-                </div>
-                <div class="col-lg-2 col-md-6 mb-4 mb-lg-0">
-                    <h5 class="fw-bold mb-3">Quick Links</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="#home" class="text-muted text-decoration-none">Home</a></li>
-                        <li><a href="#features" class="text-muted text-decoration-none">Features</a></li>
-                        <li><a href="#about" class="text-muted text-decoration-none">About</a></li>
-                        <li><a href="#contact" class="text-muted text-decoration-none">Contact</a></li>
+                    <h5>Quick links</h5>
+                    <ul class="footer-links">
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#about">About</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                        <li><a href="/app/terms">Terms &amp; Conditions</a></li>
+                        <li><a href="/app/privacy">Privacy Policy</a></li>
                     </ul>
                 </div>
-                <div class="col-lg-3 col-md-6 mb-4 mb-lg-0">
-                    <h5 class="fw-bold mb-3">Features</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="#" class="text-muted text-decoration-none">Tournament Management</a></li>
-                        <li><a href="#" class="text-muted text-decoration-none">Player Profiles</a></li>
-                        <li><a href="#" class="text-muted text-decoration-none">Live Scores</a></li>
-                        <li><a href="#" class="text-muted text-decoration-none">Rankings</a></li>
+                <div class="col-md-4">
+                    <h5>Contact</h5>
+                    <ul class="footer-links">
+                        <li>No 3 kanakar st, Katpadi, Vellore 632007</li>
+                        <li><a href="tel:9444200715">9444200715</a></li>
+                        <li><a href="mailto:pavithravit2000@gmail.com">pavithravit2000@gmail.com</a></li>
                     </ul>
                 </div>
-                <div class="col-lg-3">
-                    <h5 class="fw-bold mb-3">Follow Us</h5>
-                    <div class="d-flex justify-content-lg-start justify-content-center">
-                        <a href="#" class="social-icon">
-                            <i class="bi bi-facebook"></i>
-                        </a>
-                        <a href="#" class="social-icon">
-                            <i class="bi bi-twitter"></i>
-                        </a>
-                        <a href="#" class="social-icon">
-                            <i class="bi bi-linkedin"></i>
-                        </a>
-                        <a href="#" class="social-icon">
-                            <i class="bi bi-instagram"></i>
-                        </a>
-                    </div>
-                </div>
             </div>
-            <hr class="my-4 bg-secondary">
-            <div class="row">
-                <div class="col-12 text-center">
-                    <p class="text-muted mb-0">&copy; 2024 Keep Playing. All rights reserved.</p>
-                </div>
+            <div class="footer-bottom">
+                &copy; {{ date('Y') }} Keep Playing. All rights reserved.
             </div>
         </div>
     </footer>
 
-    <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
-        // Smooth scrolling for navigation links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href === '#') return;
                 e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
+                const target = document.querySelector(href);
                 if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    const nav = document.getElementById('navbarNav');
+                    if (nav.classList.contains('show')) {
+                        bootstrap.Collapse.getOrCreateInstance(nav).hide();
+                    }
                 }
             });
         });
 
-        // Navbar scroll effect
-        window.addEventListener('scroll', function() {
-            const navbar = document.querySelector('.navbar');
-            if (window.scrollY > 50) {
-                navbar.classList.add('scrolled');
-            } else {
-                navbar.classList.remove('scrolled');
-            }
-        });
-
-        // Form submission (prevent default for demo)
-        document.querySelector('form').addEventListener('submit', function(e) {
+        document.getElementById('contactForm').addEventListener('submit', function (e) {
             e.preventDefault();
-            alert('Thank you for your message! We will get back to you soon.');
+            alert('Thank you! We will get back to you soon.');
             this.reset();
         });
     </script>
