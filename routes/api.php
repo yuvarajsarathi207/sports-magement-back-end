@@ -8,6 +8,8 @@ use App\Http\Controllers\PlayerController;
 use App\Http\Controllers\SportsCategoryController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\PaymentController;
+use App\Models\PlatformSetting;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,6 +28,10 @@ Route::get('/health/simple', [HealthController::class, 'simple']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/sports-categories', [SportsCategoryController::class, 'index']);
+Route::get('/settings/public', function () {
+    return response()->json(PlatformSetting::publicPayload());
+});
+Route::match(['get', 'post'], '/payments/phonepe/callback', [PaymentController::class, 'phonepeCallback']);
 
 // Test route (for debugging)
 
@@ -33,10 +39,13 @@ Route::get('/sports-categories', [SportsCategoryController::class, 'index']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/test-auth', action: [\App\Http\Controllers\TestController::class, 'testAuth']);
+    Route::post('/payments/{merchantOrderId}/status', [PaymentController::class, 'checkStatus']);
 
     // Admin routes
     Route::prefix('admin')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard']);
+        Route::get('/settings', [AdminController::class, 'getSettings']);
+        Route::put('/settings', [AdminController::class, 'updateSettings']);
         Route::get('/tournaments', [AdminController::class, 'listTournaments']);
         Route::get('/tournaments/{id}', [AdminController::class, 'viewTournament']);
         Route::post('/tournaments/{id}/approve', [AdminController::class, 'approveTournament']);

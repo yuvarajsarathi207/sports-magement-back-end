@@ -17,7 +17,7 @@ const organizerNav = [
 const adminNav = [
     { to: '/admin', label: 'Home', icon: '🏠', end: true },
     { to: '/admin/tournaments', label: 'Review', icon: '✅' },
-    { to: '/admin/tournaments?status=pending_approval', label: 'Pending', icon: '⏳' },
+    { to: '/admin/settings', label: 'Settings', icon: '⚙️' },
 ];
 
 export default function Layout({ role }) {

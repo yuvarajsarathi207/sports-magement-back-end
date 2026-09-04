@@ -1,6 +1,6 @@
 import { getSportIcon } from '../utils/sportIcons';
 
-export default function TournamentCard({ tournament, onClick, badge, hideLocation = false }) {
+export default function TournamentCard({ tournament, onClick, badge, pathBadge, hideLocation = false }) {
     const category = tournament.sports_category?.name || tournament.sportsCategory?.name || 'Sport';
     const startDate = tournament.start_date
         ? new Date(tournament.start_date).toLocaleDateString('en-IN', {
@@ -42,11 +42,18 @@ export default function TournamentCard({ tournament, onClick, badge, hideLocatio
                         <span className="tournament-card-icon">{getSportIcon(category)}</span>
                         <span className="tournament-card-category">{category}</span>
                     </div>
-                    {badge && (
-                        <span className={`tournament-card-badge badge-${badge.variant}`}>
-                            {badge.text}
-                        </span>
-                    )}
+                    <div className="tournament-card-badges">
+                        {pathBadge && (
+                            <span className={`tournament-card-badge badge-${pathBadge.variant}`}>
+                                {pathBadge.text}
+                            </span>
+                        )}
+                        {badge && (
+                            <span className={`tournament-card-badge badge-${badge.variant}`}>
+                                {badge.text}
+                            </span>
+                        )}
+                    </div>
                 </div>
 
                 <h3 className="tournament-card-title">{tournament.team_name}</h3>

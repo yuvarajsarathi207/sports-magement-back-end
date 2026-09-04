@@ -28,6 +28,7 @@ class Tournament extends Model
         'price_details',
         'ball_type',
         'status',
+        'publish_path',
         'is_published',
         'rejection_reason',
         'approved_by',

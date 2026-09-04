@@ -5,7 +5,7 @@ import TournamentCard from '../../components/TournamentCard';
 import CategoryFilter from '../../components/CategoryFilter';
 import StatusStats from '../../components/StatusStats';
 import LoaderScreen from '../../components/LoaderScreen';
-import { tournamentBadge } from '../../utils/tournamentStatus';
+import { tournamentBadge, publishPathBadge } from '../../utils/tournamentStatus';
 
 export default function OrganizerDashboard() {
     const navigate = useNavigate();
@@ -63,6 +63,7 @@ export default function OrganizerDashboard() {
                                 key={t.id}
                                 tournament={t}
                                 badge={tournamentBadge(t)}
+                                pathBadge={publishPathBadge(t)}
                                 onClick={() => navigate(`/organizer/tournaments/${t.id}`)}
                             />
                         ))}

@@ -18,6 +18,8 @@ import OrganizerTournamentDetail from './pages/organizer/TournamentDetail';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminTournaments from './pages/admin/Tournaments';
 import AdminTournamentDetail from './pages/admin/TournamentDetail';
+import AdminSettings from './pages/admin/Settings';
+import PaymentReturn from './pages/PaymentReturn';
 
 function roleHome(role) {
     if (role === 'organizer') return '/organizer';
@@ -85,8 +87,11 @@ export default function AppRouter() {
                 <Route index element={<AdminDashboard />} />
                 <Route path="tournaments" element={<AdminTournaments />} />
                 <Route path="tournaments/:id" element={<AdminTournamentDetail />} />
+                <Route path="settings" element={<AdminSettings />} />
                 <Route path="profile" element={<PlayerProfile />} />
             </Route>
+
+            <Route path="/payments/return" element={<ProtectedRoute><PaymentReturn /></ProtectedRoute>} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

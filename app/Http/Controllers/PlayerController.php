@@ -7,9 +7,10 @@ use App\Models\TournamentInterest;
 use App\Models\Subscription;
 use App\Models\Payment;
 use App\Models\SportsCategory;
+use App\Models\PlatformSetting;
+use App\Services\PaymentGatewayOrchestrator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 
 /**
  * @OA\Tag(
@@ -181,7 +182,10 @@ class PlayerController extends Controller
         $tournaments = $query->latest()->get();
 
         $tournaments = $tournaments->map(function ($tournament) {
-            return $this->hideLocationFields($tournament);
+            $tournament = $this->hideLocationFields($tournament);
+            $tournament->player_subscription_fee = PlatformSetting::playerSubscriptionFee();
+
+            return $tournament;
         });
 
         return response()->json($tournaments);
@@ -218,7 +222,10 @@ class PlayerController extends Controller
             ->with(['sportsCategory'])
             ->firstOrFail();
 
-        return response()->json($this->hideLocationFields($tournament));
+        $tournament = $this->hideLocationFields($tournament);
+        $tournament->player_subscription_fee = PlatformSetting::playerSubscriptionFee();
+
+        return response()->json($tournament);
     }
 
     /**
@@ -384,7 +391,7 @@ class PlayerController extends Controller
      *     )
      * )
      */
-    public function paySubscription(Request $request, $id)
+    public function paySubscription(Request $request, $id, PaymentGatewayOrchestrator $payments)
     {
         $user = Auth::user();
 
@@ -397,29 +404,29 @@ class PlayerController extends Controller
             ->with('tournament')
             ->firstOrFail();
 
-        $request->validate([
-            'payment_method' => 'required|string',
-            'payment_details' => 'nullable|array',
-        ]);
+        if ($subscription->status === 'active') {
+            return response()->json(['message' => 'Subscription already active'], 400);
+        }
 
-        $payment = Payment::create([
-            'subscription_id' => $subscription->id,
-            'tournament_id' => $subscription->tournament_id,
-            'player_id' => $user->id,
-            'amount' => $subscription->tournament->entry_fee,
-            'status' => 'completed', // In real app, integrate with payment gateway
-            'payment_method' => $request->payment_method,
-            'transaction_id' => 'TXN-' . Str::random(16),
-            'payment_details' => json_encode($request->payment_details),
-        ]);
+        $existingCompleted = Payment::where('subscription_id', $subscription->id)
+            ->where('status', 'completed')
+            ->exists();
 
-        $subscription->update(['status' => 'active']);
+        if ($existingCompleted) {
+            return response()->json(['message' => 'Payment already completed for this subscription'], 400);
+        }
 
-        TournamentInterest::where('tournament_id', $subscription->tournament_id)
-            ->where('player_id', $user->id)
-            ->delete();
+        try {
+            $result = $payments->startPlayerSubscriptionPayment($subscription, $user->id);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 502);
+        }
 
-        return response()->json($payment, 201);
+        $result['player_subscription_fee'] = PlatformSetting::playerSubscriptionFee();
+
+        return response()->json($result, !empty($result['requires_payment']) ? 200 : 201);
     }
 
     private function hideLocationFields(Tournament $tournament): Tournament

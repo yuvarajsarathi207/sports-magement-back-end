@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Tournament;
 use App\Models\SportsCategory;
+use App\Models\PlatformSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\AdminController;
+use App\Services\PaymentGatewayOrchestrator;
 
 /**
  * @OA\Tag(
@@ -60,8 +62,11 @@ class OrganizerController extends Controller
             'total_tournaments' => $tournaments->count(),
             'draft_tournaments' => $tournaments->where('status', 'draft')->count(),
             'pending_approval' => $tournaments->where('status', 'pending_approval')->count(),
+            'pending_payment' => $tournaments->where('status', 'pending_payment')->count(),
             'published_tournaments' => $tournaments->where('status', 'published')->count(),
             'rejected_tournaments' => $tournaments->where('status', 'rejected')->count(),
+            'publish_mode' => PlatformSetting::publishMode(),
+            'organizer_publish_fee' => PlatformSetting::organizerPublishFee(),
         ];
 
         $categoryStats = SportsCategory::withCount([
@@ -72,6 +77,7 @@ class OrganizerController extends Controller
             'tournaments' => $tournaments,
             'stats' => $stats,
             'category_stats' => $categoryStats,
+            'settings' => PlatformSetting::publicPayload(),
         ]);
     }
 
@@ -297,10 +303,10 @@ class OrganizerController extends Controller
             'entry_fee' => 'sometimes|numeric|min:0',
             'price_details' => 'nullable|string',
             'ball_type' => 'nullable|string|max:255',
-            'status' => 'sometimes|in:draft,pending_approval,published,rejected',
         ]);
 
-        $tournament->update($request->all());
+        $data = $request->except(['status', 'is_published', 'approved_by', 'approved_at', 'rejection_reason']);
+        $tournament->update($data);
 
         return response()->json($tournament->load('sportsCategory'));
     }
@@ -323,7 +329,7 @@ class OrganizerController extends Controller
      *     )
      * )
      */
-    public function publishTournament($id)
+    public function publishTournament($id, PaymentGatewayOrchestrator $payments)
     {
         $user = Auth::user();
 
@@ -335,26 +341,43 @@ class OrganizerController extends Controller
             ->where('organizer_id', $user->id)
             ->firstOrFail();
 
-        if (!in_array($tournament->status, ['draft', 'rejected'])) {
+        if (!in_array($tournament->status, ['draft', 'rejected', 'pending_payment'], true)) {
             return response()->json([
-                'message' => 'Only draft or rejected tournaments can be submitted for approval.',
+                'message' => 'Only draft, rejected, or pending payment tournaments can be submitted for publish.',
             ], 400);
         }
 
-        $tournament->update([
-            'status' => 'pending_approval',
-            'is_published' => false,
-            'rejection_reason' => null,
-            'approved_by' => null,
-            'approved_at' => null,
-        ]);
+        if (PlatformSetting::isApprovalPublishMode()) {
+            $tournament->update([
+                'status' => 'pending_approval',
+                'publish_path' => 'approval',
+                'is_published' => false,
+                'rejection_reason' => null,
+                'approved_by' => null,
+                'approved_at' => null,
+            ]);
 
-        AdminController::notifyAdmins($tournament->load(['sportsCategory', 'organizer']));
+            AdminController::notifyAdmins($tournament->load(['sportsCategory', 'organizer']));
 
-        return response()->json([
-            'message' => 'Tournament submitted for admin approval. You will be notified once reviewed.',
-            'tournament' => $tournament,
-        ]);
+            return response()->json([
+                'requires_payment' => false,
+                'message' => 'Tournament submitted for admin approval. You will be notified once reviewed.',
+                'tournament' => $tournament,
+                'settings' => PlatformSetting::publicPayload(),
+            ]);
+        }
+
+        try {
+            $result = $payments->startOrganizerPublishPayment($tournament, $user->id);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+            ], 502);
+        }
+
+        $result['settings'] = PlatformSetting::publicPayload();
+
+        return response()->json($result, !empty($result['requires_payment']) ? 200 : 200);
     }
 
     private function composeLocation(Request $request): string

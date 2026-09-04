@@ -4,7 +4,7 @@ import api from '../../api/client';
 import TournamentCard from '../../components/TournamentCard';
 import CategoryFilter from '../../components/CategoryFilter';
 import LoaderScreen from '../../components/LoaderScreen';
-import { tournamentBadge } from '../../utils/tournamentStatus';
+import { tournamentBadge, publishPathBadge } from '../../utils/tournamentStatus';
 
 export default function OrganizerTournaments() {
     const navigate = useNavigate();
@@ -36,6 +36,7 @@ export default function OrganizerTournaments() {
                     <option value="">All Status</option>
                     <option value="draft">Draft</option>
                     <option value="pending_approval">Pending Approval</option>
+                    <option value="pending_payment">Pending Payment</option>
                     <option value="published">Published</option>
                     <option value="rejected">Rejected</option>
                 </select>
@@ -64,6 +65,7 @@ export default function OrganizerTournaments() {
                             key={t.id}
                             tournament={t}
                             badge={tournamentBadge(t)}
+                            pathBadge={publishPathBadge(t)}
                             onClick={() => navigate(`/organizer/tournaments/${t.id}`)}
                         />
                     ))}

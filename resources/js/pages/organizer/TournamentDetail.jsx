@@ -4,12 +4,13 @@ import api from '../../api/client';
 import Alert from '../../components/Alert';
 import { formatTournamentArea } from '../../utils/tournamentLocation';
 import LoaderScreen from '../../components/LoaderScreen';
-import { STATUS_LABELS, statusBadgeVariant } from '../../utils/tournamentStatus';
+import { STATUS_LABELS, statusBadgeVariant, publishPathBadge, resolvePublishPath } from '../../utils/tournamentStatus';
 
 export default function OrganizerTournamentDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [data, setData] = useState(null);
+    const [settings, setSettings] = useState(null);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState('');
     const [message, setMessage] = useState('');
@@ -17,8 +18,14 @@ export default function OrganizerTournamentDetail() {
 
     const loadData = () => {
         setLoading(true);
-        api.get(`/organizer/tournaments/${id}`)
-            .then((res) => setData(res.data))
+        Promise.all([
+            api.get(`/organizer/tournaments/${id}`),
+            api.get('/settings/public'),
+        ])
+            .then(([tournamentRes, settingsRes]) => {
+                setData(tournamentRes.data);
+                setSettings(settingsRes.data);
+            })
             .catch((err) => setError(err.response?.data?.message || 'Failed to load.'))
             .finally(() => setLoading(false));
     };
@@ -32,8 +39,13 @@ export default function OrganizerTournamentDetail() {
         setMessage('');
         setError('');
         try {
-            await api.post(`/organizer/tournaments/${id}/publish`);
-            setMessage('Submitted for admin approval. You will be notified once reviewed.');
+            const { data: result } = await api.post(`/organizer/tournaments/${id}/publish`);
+            if (result.redirect_url) {
+                window.location.href = result.redirect_url;
+                return;
+            }
+            setMessage(result.message || 'Tournament published.');
+            if (result.settings) setSettings(result.settings);
             loadData();
         } catch (err) {
             setError(err.response?.data?.message || 'Publish failed.');
@@ -48,15 +60,46 @@ export default function OrganizerTournamentDetail() {
     const { tournament, interested_players_count } = data;
     const category = tournament.sports_category?.name || tournament.sportsCategory?.name;
     const interests = tournament.interests || [];
+    const isPaymentMode = settings?.tournament_publish_mode === 'payment';
+    const publishFee = Number(settings?.organizer_publish_fee || 0);
+    const path = resolvePublishPath(tournament);
+    const pathBadge = publishPathBadge(tournament);
+    // Approval-queue items stay on approval path even if global mode switched to payment
+    const isApprovalQueued = tournament.status === 'pending_approval' || path === 'approval' && tournament.status === 'rejected';
+    const canPublish = ['draft', 'rejected', 'pending_payment'].includes(tournament.status)
+        && tournament.status !== 'pending_approval';
+
+    let publishLabel = '📤 Submit for Admin Approval';
+    if (isPaymentMode && !isApprovalQueued) {
+        publishLabel = publishFee > 0
+            ? `💳 Pay ₹${publishFee} to Publish`
+            : '📤 Publish Tournament';
+        if (tournament.status === 'pending_payment') {
+            publishLabel = publishFee > 0
+                ? `💳 Retry Payment — ₹${publishFee}`
+                : '📤 Publish Tournament';
+        } else if (tournament.status === 'rejected') {
+            publishLabel = publishFee > 0
+                ? `💳 Pay ₹${publishFee} & Republish`
+                : '🔄 Republish Tournament';
+        }
+    } else if (tournament.status === 'rejected') {
+        publishLabel = '🔄 Resubmit for Approval';
+    }
 
     return (
         <div className="page">
             <button type="button" className="back-btn" onClick={() => navigate(-1)}>← Back</button>
 
             <div className="detail-hero">
-                <span className={`badge badge-${statusBadgeVariant(tournament.status)}`}>
-                    {STATUS_LABELS[tournament.status] || tournament.status}
-                </span>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                    {pathBadge && (
+                        <span className={`badge badge-${pathBadge.variant}`}>{pathBadge.text}</span>
+                    )}
+                    <span className={`badge badge-${statusBadgeVariant(tournament.status)}`}>
+                        {STATUS_LABELS[tournament.status] || tournament.status}
+                    </span>
+                </div>
                 <h2 className="detail-title">{tournament.team_name}</h2>
                 <p className="detail-location">📍 {formatTournamentArea(tournament)}</p>
             </div>
@@ -129,23 +172,23 @@ export default function OrganizerTournamentDetail() {
                 </div>
             )}
 
-            {!['pending_approval', 'published'].includes(tournament.status) && (
+            {canPublish && (
                 <button
                     type="button"
                     className="btn btn-primary btn-block"
                     onClick={publish}
                     disabled={actionLoading === 'publish'}
                 >
-                    {actionLoading === 'publish'
-                        ? 'Submitting...'
-                        : tournament.status === 'rejected'
-                            ? '🔄 Resubmit for Approval'
-                            : '📤 Submit for Admin Approval'}
+                    {actionLoading === 'publish' ? 'Processing...' : publishLabel}
                 </button>
             )}
 
             {tournament.status === 'pending_approval' && (
                 <div className="locked-banner">⏳ Waiting for admin approval before players can see this tournament.</div>
+            )}
+
+            {tournament.status === 'pending_payment' && (
+                <div className="locked-banner">💳 Waiting for publish payment before this tournament goes live.</div>
             )}
 
             {interests.length > 0 && (

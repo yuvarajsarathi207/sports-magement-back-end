@@ -9,14 +9,20 @@ class Payment extends Model
 {
     use HasFactory;
 
+    public const TYPE_PLAYER_SUBSCRIPTION = 'player_subscription';
+    public const TYPE_ORGANIZER_PUBLISH = 'organizer_publish';
+
     protected $fillable = [
+        'type',
         'subscription_id',
         'tournament_id',
         'player_id',
+        'organizer_id',
         'amount',
         'status',
         'payment_method',
         'transaction_id',
+        'merchant_order_id',
         'payment_details',
     ];
 
@@ -38,5 +44,9 @@ class Payment extends Model
     {
         return $this->belongsTo(User::class, 'player_id');
     }
-}
 
+    public function organizer()
+    {
+        return $this->belongsTo(User::class, 'organizer_id');
+    }
+}

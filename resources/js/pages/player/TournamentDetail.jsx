@@ -12,6 +12,7 @@ export default function PlayerTournamentDetail() {
     const [tournament, setTournament] = useState(null);
     const [subscription, setSubscription] = useState(null);
     const [hasInterest, setHasInterest] = useState(false);
+    const [subscriptionFee, setSubscriptionFee] = useState(0);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState('');
     const [message, setMessage] = useState('');
@@ -21,12 +22,20 @@ export default function PlayerTournamentDetail() {
         setLoading(true);
         setError('');
         try {
-            const [basicRes, dashRes] = await Promise.all([
+            const [basicRes, dashRes, settingsRes] = await Promise.all([
                 api.get(`/player/tournaments/${id}`),
                 api.get('/player/dashboard'),
+                api.get('/settings/public'),
             ]);
 
             setTournament(basicRes.data);
+            setSubscriptionFee(
+                Number(
+                    basicRes.data.player_subscription_fee
+                        ?? settingsRes.data.player_subscription_fee
+                        ?? 0
+                )
+            );
 
             const subs = dashRes.data.subscriptions || [];
             const sub = subs.find((s) => String(s.tournament_id) === String(id));
@@ -76,7 +85,11 @@ export default function PlayerTournamentDetail() {
         try {
             const { data } = await api.post(`/player/tournaments/${id}/subscribe`);
             setSubscription(data);
-            setMessage('Subscribed! Complete payment to unlock full details.');
+            setMessage(
+                subscriptionFee > 0
+                    ? 'Subscribed! Complete payment to unlock full details.'
+                    : 'Subscribed! Activate to unlock full details.'
+            );
         } catch (err) {
             setError(err.response?.data?.message || 'Could not subscribe.');
         } finally {
@@ -90,11 +103,12 @@ export default function PlayerTournamentDetail() {
         setMessage('');
         setError('');
         try {
-            await api.post(`/player/subscriptions/${subscription.id}/pay`, {
-                payment_method: 'card',
-                payment_details: { demo: true },
-            });
-            setMessage('Payment successful! Full details unlocked.');
+            const { data } = await api.post(`/player/subscriptions/${subscription.id}/pay`);
+            if (data.redirect_url) {
+                window.location.href = data.redirect_url;
+                return;
+            }
+            setMessage(data.message || 'Payment successful! Full details unlocked.');
             const detailRes = await api.get(`/player/tournaments/${id}/details`);
             setTournament(detailRes.data);
             setSubscription((prev) => ({ ...prev, status: 'active' }));
@@ -113,6 +127,7 @@ export default function PlayerTournamentDetail() {
     const isSubscribed = !!subscription;
     const isActive = subscription?.status === 'active';
     const showFullDetails = isActive;
+    const feeLabel = Number(subscriptionFee).toLocaleString('en-IN');
 
     return (
         <div className="page">
@@ -145,8 +160,8 @@ export default function PlayerTournamentDetail() {
                     <span>{tournament.slot_count}</span>
                 </div>
                 <div className="detail-item">
-                    <span className="detail-label">Entry Fee</span>
-                    <span className="fee-highlight">₹{tournament.entry_fee}</span>
+                    <span className="detail-label">Subscription Fee</span>
+                    <span className="fee-highlight">₹{feeLabel}</span>
                 </div>
             </div>
 
@@ -187,7 +202,7 @@ export default function PlayerTournamentDetail() {
                         onClick={subscribe}
                         disabled={actionLoading === 'subscribe'}
                     >
-                        {actionLoading === 'subscribe' ? 'Subscribing...' : 'Subscribe — ₹' + tournament.entry_fee}
+                        {actionLoading === 'subscribe' ? 'Subscribing...' : `Subscribe — ₹${feeLabel}`}
                     </button>
                 )}
 
@@ -198,7 +213,11 @@ export default function PlayerTournamentDetail() {
                         onClick={pay}
                         disabled={actionLoading === 'pay'}
                     >
-                        {actionLoading === 'pay' ? 'Processing...' : '💳 Pay Entry Fee'}
+                        {actionLoading === 'pay'
+                            ? 'Processing...'
+                            : subscriptionFee > 0
+                                ? `💳 Pay ₹${feeLabel}`
+                                : '✅ Activate Subscription'}
                     </button>
                 )}
 

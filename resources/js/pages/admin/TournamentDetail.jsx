@@ -4,7 +4,7 @@ import api from '../../api/client';
 import Alert from '../../components/Alert';
 import { formatTournamentArea } from '../../utils/tournamentLocation';
 import LoaderScreen from '../../components/LoaderScreen';
-import { STATUS_LABELS, statusBadgeVariant } from '../../utils/tournamentStatus';
+import { STATUS_LABELS, statusBadgeVariant, publishPathBadge, resolvePublishPath } from '../../utils/tournamentStatus';
 
 export default function AdminTournamentDetail() {
     const { id } = useParams();
@@ -79,15 +79,23 @@ export default function AdminTournamentDetail() {
     const { tournament, interested_players_count } = data;
     const category = tournament.sports_category?.name || tournament.sportsCategory?.name;
     const organizer = tournament.organizer;
+    const path = resolvePublishPath(tournament);
+    const pathBadge = publishPathBadge(tournament);
+    const canApproveReject = tournament.status === 'pending_approval';
 
     return (
         <div className="page">
             <button type="button" className="back-btn" onClick={() => navigate(-1)}>← Back</button>
 
             <div className="detail-hero">
-                <span className={`badge badge-${statusBadgeVariant(tournament.status)}`}>
-                    {STATUS_LABELS[tournament.status] || tournament.status}
-                </span>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                    {pathBadge && (
+                        <span className={`badge badge-${pathBadge.variant}`}>{pathBadge.text}</span>
+                    )}
+                    <span className={`badge badge-${statusBadgeVariant(tournament.status)}`}>
+                        {STATUS_LABELS[tournament.status] || tournament.status}
+                    </span>
+                </div>
                 <h2 className="detail-title">{tournament.team_name}</h2>
                 <p className="detail-location">📍 {formatTournamentArea(tournament)}</p>
                 <p className="text-muted">Organizer: {organizer?.name} · {organizer?.email}</p>
@@ -95,6 +103,18 @@ export default function AdminTournamentDetail() {
 
             <Alert message={error} />
             {message && <Alert type="success" message={message} />}
+
+            {path === 'payment' && tournament.status === 'pending_payment' && (
+                <div className="locked-banner">
+                    This tournament is on the Payment path. Waiting for organizer publish payment.
+                </div>
+            )}
+
+            {path === 'approval' && tournament.status === 'pending_approval' && (
+                <div className="locked-banner">
+                    This tournament is on the Approval path. Review and approve or reject below.
+                </div>
+            )}
 
             {tournament.rejection_reason && (
                 <div className="locked-banner">Previous rejection: {tournament.rejection_reason}</div>
@@ -132,7 +152,7 @@ export default function AdminTournamentDetail() {
             )}
 
             <div className="action-stack">
-                {tournament.status === 'pending_approval' && (
+                {canApproveReject && (
                     <>
                         <button type="button" className="btn btn-primary btn-block" onClick={approve} disabled={actionLoading === 'approve'}>
                             {actionLoading === 'approve' ? 'Approving...' : '✅ Approve & Publish'}
