@@ -36,20 +36,31 @@ class AdminController extends Controller
             'publish_mode' => PlatformSetting::publishMode(),
         ];
 
+        $completedPhonePe = Payment::query()
+            ->where('status', 'completed')
+            ->where('payment_method', 'phonepe');
+
         $paymentStats = [
             'total' => Payment::count(),
-            'completed' => Payment::where('status', 'completed')->count(),
-            'pending' => Payment::where('status', 'pending')->count(),
-            'failed' => Payment::where('status', 'failed')->count(),
-            'revenue_total' => (float) Payment::where('status', 'completed')->sum('amount'),
-            'revenue_publish' => (float) Payment::where('status', 'completed')
+            'completed' => (clone $completedPhonePe)->count(),
+            'pending' => Payment::where('status', 'pending')->where('payment_method', 'phonepe')->count(),
+            'failed' => Payment::where('status', 'failed')->where('payment_method', 'phonepe')->count(),
+            // Platform revenue = completed PhonePe only (exclude old stub/demo card payments)
+            'revenue_total' => (float) (clone $completedPhonePe)->sum('amount'),
+            'revenue_publish' => (float) (clone $completedPhonePe)
                 ->where('type', Payment::TYPE_ORGANIZER_PUBLISH)
                 ->sum('amount'),
-            'revenue_subscription' => (float) Payment::where('status', 'completed')
+            'revenue_subscription' => (float) (clone $completedPhonePe)
                 ->where('type', Payment::TYPE_PLAYER_SUBSCRIPTION)
                 ->sum('amount'),
-            'publish_payments' => Payment::where('type', Payment::TYPE_ORGANIZER_PUBLISH)->count(),
-            'subscription_payments' => Payment::where('type', Payment::TYPE_PLAYER_SUBSCRIPTION)->count(),
+            'publish_payments' => Payment::where('type', Payment::TYPE_ORGANIZER_PUBLISH)
+                ->where('payment_method', 'phonepe')
+                ->where('status', 'completed')
+                ->count(),
+            'subscription_payments' => Payment::where('type', Payment::TYPE_PLAYER_SUBSCRIPTION)
+                ->where('payment_method', 'phonepe')
+                ->where('status', 'completed')
+                ->count(),
         ];
 
         $categoryStats = SportsCategory::withCount([
@@ -133,7 +144,7 @@ class AdminController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        return response()->json(PlatformSetting::publicPayload());
+        return response()->json(PlatformSetting::adminPayload());
     }
 
     public function updateSettings(Request $request)
@@ -147,15 +158,37 @@ class AdminController extends Controller
             'tournament_publish_mode' => 'required|in:approval,payment',
             'organizer_publish_fee' => 'required|numeric|min:0',
             'player_subscription_fee' => 'required|numeric|min:0',
+            'phonepe_env' => 'required|in:sandbox,production',
         ]);
+
+        if ($validated['phonepe_env'] === 'sandbox'
+            && (!filled(config('services.phonepe.sandbox.client_id')) || !filled(config('services.phonepe.sandbox.client_secret')))
+        ) {
+            return response()->json([
+                'message' => 'Sandbox PhonePe credentials are missing in .env (PHONEPE_CLIENT_ID_SANDBOX / PHONEPE_CLIENT_SECRET_SANDBOX).',
+            ], 422);
+        }
+
+        if ($validated['phonepe_env'] === 'production'
+            && (!filled(config('services.phonepe.production.client_id')) || !filled(config('services.phonepe.production.client_secret')))
+        ) {
+            return response()->json([
+                'message' => 'Production PhonePe credentials are missing in .env (PHONEPE_CLIENT_ID_PRODUCTION / PHONEPE_CLIENT_SECRET_PRODUCTION).',
+            ], 422);
+        }
 
         PlatformSetting::setValue(PlatformSetting::KEY_PUBLISH_MODE, $validated['tournament_publish_mode']);
         PlatformSetting::setValue(PlatformSetting::KEY_ORGANIZER_PUBLISH_FEE, number_format((float) $validated['organizer_publish_fee'], 2, '.', ''));
         PlatformSetting::setValue(PlatformSetting::KEY_PLAYER_SUBSCRIPTION_FEE, number_format((float) $validated['player_subscription_fee'], 2, '.', ''));
+        PlatformSetting::setValue(PlatformSetting::KEY_PHONEPE_ENV, $validated['phonepe_env']);
+
+        // Drop cached OAuth tokens so next payment uses the selected env
+        \Illuminate\Support\Facades\Cache::forget('phonepe_oauth_token_sandbox');
+        \Illuminate\Support\Facades\Cache::forget('phonepe_oauth_token_production');
 
         return response()->json([
             'message' => 'Settings updated successfully.',
-            'settings' => PlatformSetting::publicPayload(),
+            'settings' => PlatformSetting::adminPayload(),
         ]);
     }
 

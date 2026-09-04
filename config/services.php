@@ -32,13 +32,21 @@ return [
     ],
 
     'phonepe' => [
-        'client_id' => env('PHONEPE_CLIENT_ID'),
-        'client_secret' => env('PHONEPE_CLIENT_SECRET'),
         'client_version' => env('PHONEPE_CLIENT_VERSION', '1'),
         'merchant_id' => env('PHONEPE_MERCHANT_ID'),
         'env' => env('PHONEPE_ENV', 'sandbox'),
         'redirect_url' => env('PHONEPE_REDIRECT_URL'),
         'callback_url' => env('PHONEPE_CALLBACK_URL'),
+        'sandbox' => [
+            'client_id' => env('PHONEPE_CLIENT_ID_SANDBOX', env('PHONEPE_CLIENT_ID')),
+            'client_secret' => env('PHONEPE_CLIENT_SECRET_SANDBOX', env('PHONEPE_CLIENT_SECRET')),
+            'merchant_id' => env('PHONEPE_MERCHANT_ID_SANDBOX', env('PHONEPE_MERCHANT_ID')),
+        ],
+        'production' => [
+            'client_id' => env('PHONEPE_CLIENT_ID_PRODUCTION', env('PHONEPE_CLIENT_ID')),
+            'client_secret' => env('PHONEPE_CLIENT_SECRET_PRODUCTION', env('PHONEPE_CLIENT_SECRET')),
+            'merchant_id' => env('PHONEPE_MERCHANT_ID_PRODUCTION', env('PHONEPE_MERCHANT_ID')),
+        ],
     ],
 
 ];

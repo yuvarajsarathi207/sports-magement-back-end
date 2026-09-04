@@ -105,7 +105,7 @@ export default function AdminDashboard() {
     ];
 
     const paymentItems = [
-        { value: `₹${formatMoney(paymentStats.revenue_total)}`, label: 'Revenue', icon: '💰', tone: 'success' },
+        { value: formatMoney(paymentStats.revenue_total), label: 'Revenue (₹)', icon: '💰', tone: 'success' },
         { value: paymentStats.completed || 0, label: 'Paid', icon: '✅', tone: 'success' },
         { value: paymentStats.pending || 0, label: 'Pending Pay', icon: '⏳', tone: 'warning' },
         { value: paymentStats.failed || 0, label: 'Failed', icon: '✕', tone: 'danger' },
@@ -119,7 +119,7 @@ export default function AdminDashboard() {
 
             <section className="section">
                 <div className="section-header">
-                    <h2 className="section-title">Payments</h2>
+                    <h2 className="section-title">PhonePe Payments</h2>
                 </div>
                 <StatusStats items={paymentItems} />
                 <div className="stats-row" style={{ marginTop: '12px' }}>
@@ -132,8 +132,8 @@ export default function AdminDashboard() {
                         <span className="stat-label">Subscriptions</span>
                     </div>
                     <div className="stat-card">
-                        <span className="stat-value">{paymentStats.total || 0}</span>
-                        <span className="stat-label">All payments</span>
+                        <span className="stat-value">{(paymentStats.publish_payments || 0) + (paymentStats.subscription_payments || 0)}</span>
+                        <span className="stat-label">Successful pays</span>
                     </div>
                 </div>
             </section>
