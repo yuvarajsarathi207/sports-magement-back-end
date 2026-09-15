@@ -5,6 +5,7 @@ import TournamentCard from '../../components/TournamentCard';
 import CategoryFilter from '../../components/CategoryFilter';
 import StatusStats from '../../components/StatusStats';
 import LoaderScreen from '../../components/LoaderScreen';
+import RecommendedProducts from '../../components/shop/RecommendedProducts';
 
 export default function PlayerDashboard() {
     const navigate = useNavigate();
@@ -55,6 +56,8 @@ export default function PlayerDashboard() {
             </div>
 
             <StatusStats items={statusItems} />
+
+            <RecommendedProducts basePath="/shop" />
 
             <div className="dashboard-grid">
                 <section className="dashboard-panel">

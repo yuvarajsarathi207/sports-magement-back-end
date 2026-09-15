@@ -5,12 +5,14 @@ import ProfileMenu from './ProfileMenu';
 
 const playerNav = [
     { to: '/', label: 'Dashboard', icon: '🏠', end: true },
+    { to: '/shop', label: 'Shop', icon: '🛒' },
     { to: '/tournaments', label: 'Browse', icon: '🏆' },
     { to: '/profile', label: 'Profile', icon: '👤' },
 ];
 
 const organizerNav = [
     { to: '/organizer', label: 'Dashboard', icon: '🏠', end: true },
+    { to: '/organizer/shop', label: 'Shop', icon: '🛒' },
     { to: '/organizer/tournaments', label: 'Events', icon: '📋' },
     { to: '/organizer/tournaments/new', label: 'Create', icon: '➕' },
     { to: '/organizer/profile', label: 'Profile', icon: '👤' },
@@ -19,6 +21,7 @@ const organizerNav = [
 const adminNav = [
     { to: '/admin', label: 'Dashboard', icon: '🏠', end: true },
     { to: '/admin/tournaments', label: 'Review', icon: '✅' },
+    { to: '/admin/commerce', label: 'Commerce', icon: '🛍️' },
     { to: '/admin/settings', label: 'Settings', icon: '⚙️' },
     { to: '/admin/profile', label: 'Profile', icon: '👤' },
 ];
@@ -35,6 +38,10 @@ export default function Layout({ role }) {
     const navItems = role === 'admin' ? adminNav : role === 'organizer' ? organizerNav : playerNav;
     const firstName = user?.name?.split(' ')[0] || 'there';
     const brandName = settings?.platform_name || 'Keep Playing';
+    const commerceEnabled = settings?.commerce_enabled !== false;
+    const visibleNav = commerceEnabled
+        ? navItems
+        : navItems.filter((item) => !String(item.to).includes('shop') && !String(item.to).includes('commerce'));
 
     return (
         <div className="app-shell">
@@ -48,7 +55,7 @@ export default function Layout({ role }) {
                 </div>
 
                 <nav className="sidebar-nav">
-                    {navItems.map((item) => (
+                    {visibleNav.map((item) => (
                         <NavLink
                             key={item.to}
                             to={item.to}
@@ -84,7 +91,7 @@ export default function Layout({ role }) {
             </div>
 
             <nav className="bottom-nav" aria-label="Main navigation">
-                {navItems.slice(0, 3).map((item) => (
+                {visibleNav.slice(0, 3).map((item) => (
                     <NavLink
                         key={item.to}
                         to={item.to}

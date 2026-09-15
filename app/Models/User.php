@@ -65,6 +65,21 @@ class User extends Authenticatable
         return $this->hasMany(Payment::class, 'player_id');
     }
 
+    public function addresses()
+    {
+        return $this->hasMany(\App\Models\Commerce\UserAddress::class);
+    }
+
+    public function cart()
+    {
+        return $this->hasOne(\App\Models\Commerce\Cart::class);
+    }
+
+    public function commerceOrders()
+    {
+        return $this->hasMany(\App\Models\Commerce\Order::class);
+    }
+
     public function isOrganizer()
     {
         return $this->role === 'organizer';

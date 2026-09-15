@@ -5,6 +5,7 @@ import TournamentCard from '../../components/TournamentCard';
 import CategoryFilter from '../../components/CategoryFilter';
 import StatusStats from '../../components/StatusStats';
 import LoaderScreen from '../../components/LoaderScreen';
+import RecommendedProducts from '../../components/shop/RecommendedProducts';
 import { tournamentBadge, publishPathBadge } from '../../utils/tournamentStatus';
 
 function formatMoney(amount) {
@@ -103,6 +104,8 @@ export default function OrganizerDashboard() {
             </div>
 
             <StatusStats items={statusItems} />
+
+            <RecommendedProducts basePath="/organizer/shop" />
 
             <div className="money-stat">
                 <span className="money-stat-label">Entry fees collected</span>

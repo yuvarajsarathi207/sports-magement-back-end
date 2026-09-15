@@ -1,4 +1,5 @@
-export default function Alert({ type = 'error', message }) {
-    if (!message) return null;
-    return <div className={`alert alert-${type}`}>{message}</div>;
+export default function Alert({ type = 'error', message, children }) {
+    const text = message || children;
+    if (!text) return null;
+    return <div className={`alert alert-${type}`}>{text}</div>;
 }

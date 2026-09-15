@@ -47,8 +47,9 @@ export default function PaymentReturn() {
     if (loading) return <LoaderScreen message="Confirming payment..." fullScreen />;
 
     const status = payment?.status || 'unknown';
-    const isSuccess = status === 'completed';
-    const isFailed = status === 'failed';
+    const isCommerce = Boolean(payment?.order_id) || ['SUCCESS', 'PENDING', 'FAILED', 'INITIATED'].includes(status);
+    const isSuccess = status === 'completed' || status === 'SUCCESS';
+    const isFailed = status === 'failed' || status === 'FAILED';
 
     const goHome = () => {
         if (user?.role === 'organizer') navigate('/organizer');
@@ -57,6 +58,11 @@ export default function PaymentReturn() {
     };
 
     const goDetail = () => {
+        if (isCommerce && payment?.order_id) {
+            if (user?.role === 'organizer') navigate(`/organizer/shop/orders/${payment.order_id}`);
+            else navigate(`/shop/orders/${payment.order_id}`);
+            return;
+        }
         const tournamentId = payment?.tournament_id;
         if (!tournamentId) {
             goHome();
@@ -72,7 +78,7 @@ export default function PaymentReturn() {
             <Alert message={error} />
 
             {isSuccess && <Alert type="success" message="Payment completed successfully." />}
-            {isFailed && <Alert message="Payment failed. You can try again from the tournament page." />}
+            {isFailed && <Alert message={isCommerce ? 'Payment failed. You can retry from your orders.' : 'Payment failed. You can try again from the tournament page.'} />}
             {!isSuccess && !isFailed && payment && (
                 <Alert type="success" message="Payment is still pending. Refresh in a moment if needed." />
             )}
@@ -93,14 +99,14 @@ export default function PaymentReturn() {
                     </div>
                     <div className="detail-item">
                         <span className="detail-label">Type</span>
-                        <span>{payment.type}</span>
+                        <span>{isCommerce ? 'commerce' : (payment.type || 'tournament')}</span>
                     </div>
                 </div>
             )}
 
             <div className="action-stack" style={{ marginTop: '1.5rem' }}>
                 <button type="button" className="btn btn-primary btn-block" onClick={goDetail}>
-                    Back to tournament
+                    {isCommerce ? 'View order' : 'Back to tournament'}
                 </button>
                 <button type="button" className="btn btn-outline btn-block" onClick={goHome}>
                     Go home

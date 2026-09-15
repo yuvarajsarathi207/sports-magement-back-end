@@ -36,6 +36,16 @@ class PlatformSetting extends Model
     public const KEY_SUPPORT_PHONE = 'support_phone';
     public const KEY_PAYMENT_INSTRUCTIONS = 'payment_instructions';
 
+    public const KEY_COMMERCE_ENABLED = 'commerce_enabled';
+    public const KEY_COMMERCE_COD_ENABLED = 'commerce_cod_enabled';
+    public const KEY_COMMERCE_ONLINE_PAYMENT_ENABLED = 'commerce_online_payment_enabled';
+    public const KEY_COMMERCE_COD_MIN_AMOUNT = 'commerce_cod_min_amount';
+    public const KEY_COMMERCE_COD_MAX_AMOUNT = 'commerce_cod_max_amount';
+    public const KEY_COMMERCE_DELIVERY_CHARGE = 'commerce_delivery_charge';
+    public const KEY_COMMERCE_FREE_DELIVERY_THRESHOLD = 'commerce_free_delivery_threshold';
+    public const KEY_COMMERCE_LOW_STOCK_THRESHOLD = 'commerce_low_stock_threshold';
+    public const KEY_COMMERCE_RESERVATION_TTL_MINUTES = 'commerce_reservation_ttl_minutes';
+
     public const PHONEPE_ENV_SANDBOX = 'sandbox';
     public const PHONEPE_ENV_PRODUCTION = 'production';
 
@@ -156,6 +166,66 @@ class PlatformSetting extends Model
             : 'Pay via UPI or bank transfer and share the screenshot with the organizer.';
     }
 
+    public static function commerceEnabled(): bool
+    {
+        return (string) static::getValue(self::KEY_COMMERCE_ENABLED, '1') === '1';
+    }
+
+    public static function commerceCodEnabled(): bool
+    {
+        return (string) static::getValue(self::KEY_COMMERCE_COD_ENABLED, '1') === '1';
+    }
+
+    public static function commerceOnlinePaymentEnabled(): bool
+    {
+        return (string) static::getValue(self::KEY_COMMERCE_ONLINE_PAYMENT_ENABLED, '1') === '1';
+    }
+
+    public static function commerceCodMinAmount(): float
+    {
+        return (float) static::getValue(self::KEY_COMMERCE_COD_MIN_AMOUNT, 0);
+    }
+
+    public static function commerceCodMaxAmount(): float
+    {
+        return (float) static::getValue(self::KEY_COMMERCE_COD_MAX_AMOUNT, 50000);
+    }
+
+    public static function commerceDeliveryCharge(): float
+    {
+        return (float) static::getValue(self::KEY_COMMERCE_DELIVERY_CHARGE, 49);
+    }
+
+    public static function commerceFreeDeliveryThreshold(): float
+    {
+        return (float) static::getValue(self::KEY_COMMERCE_FREE_DELIVERY_THRESHOLD, 999);
+    }
+
+    public static function commerceLowStockThreshold(): int
+    {
+        return (int) static::getValue(self::KEY_COMMERCE_LOW_STOCK_THRESHOLD, 5);
+    }
+
+    public static function commerceReservationTtlMinutes(): int
+    {
+        return max(1, (int) static::getValue(self::KEY_COMMERCE_RESERVATION_TTL_MINUTES, 15));
+    }
+
+    public static function commercePayload(): array
+    {
+        return [
+            'commerce_enabled' => static::commerceEnabled(),
+            'commerce_cod_enabled' => static::commerceCodEnabled(),
+            'commerce_online_payment_enabled' => static::commerceOnlinePaymentEnabled(),
+            'commerce_cod_min_amount' => static::commerceCodMinAmount(),
+            'commerce_cod_max_amount' => static::commerceCodMaxAmount(),
+            'commerce_delivery_charge' => static::commerceDeliveryCharge(),
+            'commerce_free_delivery_threshold' => static::commerceFreeDeliveryThreshold(),
+            'commerce_low_stock_threshold' => static::commerceLowStockThreshold(),
+            'commerce_reservation_ttl_minutes' => static::commerceReservationTtlMinutes(),
+        ];
+    }
+
     public static function themeTokens(string $theme = null): array
     {
         $theme = $theme ?: static::appTheme();
@@ -235,6 +305,7 @@ class PlatformSetting extends Model
             'support_email' => static::supportEmail(),
             'support_phone' => static::supportPhone(),
             'payment_instructions' => static::paymentInstructions(),
+            ...static::commercePayload(),
         ];
     }
 
