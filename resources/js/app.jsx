@@ -3,6 +3,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { SettingsProvider } from './context/SettingsContext';
 import AppRouter from './AppRouter';
 import InstallPrompt from './components/InstallPrompt';
 import { registerPwa } from './pwa';
@@ -14,10 +15,12 @@ if (root) {
     createRoot(root).render(
         <React.StrictMode>
             <BrowserRouter basename="/app">
-                <AuthProvider>
-                    <InstallPrompt />
-                    <AppRouter />
-                </AuthProvider>
+                <SettingsProvider>
+                    <AuthProvider>
+                        <InstallPrompt />
+                        <AppRouter />
+                    </AuthProvider>
+                </SettingsProvider>
             </BrowserRouter>
         </React.StrictMode>
     );

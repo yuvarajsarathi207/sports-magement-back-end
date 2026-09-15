@@ -61,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/tournaments/{id}', [OrganizerController::class, 'viewTournament']);
         Route::put('/tournaments/{id}', [OrganizerController::class, 'updateTournament']);
         Route::post('/tournaments/{id}/publish', [OrganizerController::class, 'publishTournament']);
+        Route::post('/tournaments/{id}/subscriptions/{subscriptionId}/confirm-payment', [OrganizerController::class, 'confirmPlayerPayment']);
     });
 
     // Player routes

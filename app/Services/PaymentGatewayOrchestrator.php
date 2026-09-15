@@ -20,35 +20,10 @@ class PaymentGatewayOrchestrator
     public function startOrganizerPublishPayment(Tournament $tournament, int $organizerId): array
     {
         $fee = PlatformSetting::organizerPublishFee();
+        $method = PlatformSetting::paymentMethod();
 
-        if ($fee <= 0) {
-            $tournament->update([
-                'status' => 'published',
-                'publish_path' => 'payment',
-                'is_published' => true,
-                'rejection_reason' => null,
-                'approved_by' => null,
-                'approved_at' => now(),
-            ]);
-
-            $payment = Payment::create([
-                'type' => Payment::TYPE_ORGANIZER_PUBLISH,
-                'tournament_id' => $tournament->id,
-                'organizer_id' => $organizerId,
-                'amount' => 0,
-                'status' => 'completed',
-                'payment_method' => 'free',
-                'transaction_id' => 'FREE-' . Str::upper(Str::random(12)),
-                'merchant_order_id' => null,
-                'payment_details' => json_encode(['reason' => 'zero_fee']),
-            ]);
-
-            return [
-                'requires_payment' => false,
-                'message' => 'Tournament published successfully (no publish fee).',
-                'tournament' => $tournament->fresh(),
-                'payment' => $payment,
-            ];
+        if ($fee <= 0 || $method === PlatformSetting::PAYMENT_METHOD_FREE) {
+            return $this->completeOrganizerPublishFree($tournament, $organizerId, $fee, $method === PlatformSetting::PAYMENT_METHOD_FREE ? 'free_mode' : 'zero_fee');
         }
 
         $tournament->update([
@@ -60,6 +35,29 @@ class PaymentGatewayOrchestrator
             'approved_at' => null,
         ]);
 
+        if ($method === PlatformSetting::PAYMENT_METHOD_MANUAL) {
+            $payment = Payment::create([
+                'type' => Payment::TYPE_ORGANIZER_PUBLISH,
+                'tournament_id' => $tournament->id,
+                'organizer_id' => $organizerId,
+                'amount' => $fee,
+                'status' => 'pending',
+                'payment_method' => 'manual',
+                'transaction_id' => null,
+                'merchant_order_id' => 'MANUAL-' . Str::upper(Str::random(10)),
+                'payment_details' => json_encode(['instructions' => PlatformSetting::paymentInstructions()]),
+            ]);
+
+            return [
+                'requires_payment' => true,
+                'payment_method' => 'manual',
+                'message' => 'Complete offline payment to publish this tournament. Admin can confirm once paid.',
+                'payment_instructions' => PlatformSetting::paymentInstructions(),
+                'tournament' => $tournament->fresh(),
+                'payment' => $payment,
+            ];
+        }
+
         $checkout = $this->createPhonePeCheckout(
             type: Payment::TYPE_ORGANIZER_PUBLISH,
             amount: $fee,
@@ -70,6 +68,7 @@ class PaymentGatewayOrchestrator
 
         return [
             'requires_payment' => true,
+            'payment_method' => 'phonepe',
             'message' => 'Complete payment to publish this tournament.',
             'tournament' => $tournament->fresh(),
             'payment' => $checkout['payment'],
@@ -81,26 +80,55 @@ class PaymentGatewayOrchestrator
     public function startPlayerSubscriptionPayment(Subscription $subscription, int $playerId): array
     {
         $fee = PlatformSetting::playerSubscriptionFee();
+        $method = PlatformSetting::paymentMethod();
 
-        if ($fee <= 0) {
+        if ($fee <= 0 || $method === PlatformSetting::PAYMENT_METHOD_FREE) {
             $payment = Payment::create([
                 'type' => Payment::TYPE_PLAYER_SUBSCRIPTION,
                 'subscription_id' => $subscription->id,
                 'tournament_id' => $subscription->tournament_id,
                 'player_id' => $playerId,
-                'amount' => 0,
+                'amount' => $method === PlatformSetting::PAYMENT_METHOD_FREE ? $fee : 0,
                 'status' => 'pending',
                 'payment_method' => 'free',
                 'transaction_id' => 'FREE-' . Str::upper(Str::random(12)),
                 'merchant_order_id' => null,
-                'payment_details' => json_encode(['reason' => 'zero_fee']),
+                'payment_details' => json_encode([
+                    'reason' => $method === PlatformSetting::PAYMENT_METHOD_FREE ? 'free_mode' : 'zero_fee',
+                ]),
             ]);
 
-            $payment = $this->completion->markCompleted($payment, $payment->transaction_id, ['reason' => 'zero_fee']);
+            $payment = $this->completion->markCompleted($payment, $payment->transaction_id, [
+                'reason' => $method === PlatformSetting::PAYMENT_METHOD_FREE ? 'free_mode' : 'zero_fee',
+            ]);
 
             return [
                 'requires_payment' => false,
-                'message' => 'Subscription activated (no subscription fee).',
+                'payment_method' => 'free',
+                'message' => 'Subscription activated.',
+                'payment' => $payment,
+            ];
+        }
+
+        if ($method === PlatformSetting::PAYMENT_METHOD_MANUAL) {
+            $payment = Payment::create([
+                'type' => Payment::TYPE_PLAYER_SUBSCRIPTION,
+                'subscription_id' => $subscription->id,
+                'tournament_id' => $subscription->tournament_id,
+                'player_id' => $playerId,
+                'amount' => $fee,
+                'status' => 'pending',
+                'payment_method' => 'manual',
+                'transaction_id' => null,
+                'merchant_order_id' => 'MANUAL-' . Str::upper(Str::random(10)),
+                'payment_details' => json_encode(['instructions' => PlatformSetting::paymentInstructions()]),
+            ]);
+
+            return [
+                'requires_payment' => true,
+                'payment_method' => 'manual',
+                'message' => 'Complete offline payment. Organizer will confirm once paid.',
+                'payment_instructions' => PlatformSetting::paymentInstructions(),
                 'payment' => $payment,
             ];
         }
@@ -116,10 +144,94 @@ class PaymentGatewayOrchestrator
 
         return [
             'requires_payment' => true,
+            'payment_method' => 'phonepe',
             'message' => 'Complete payment to activate your subscription.',
             'payment' => $checkout['payment'],
             'redirect_url' => $checkout['redirect_url'],
             'merchant_order_id' => $checkout['merchant_order_id'],
+        ];
+    }
+
+    public function confirmManualSubscriptionPayment(Subscription $subscription, int $organizerId): array
+    {
+        $tournament = $subscription->tournament;
+        if (!$tournament || (int) $tournament->organizer_id !== $organizerId) {
+            throw new RuntimeException('Unauthorized.');
+        }
+
+        if ($subscription->status === 'active') {
+            return [
+                'message' => 'Subscription already active.',
+                'subscription' => $subscription,
+            ];
+        }
+
+        $payment = Payment::where('subscription_id', $subscription->id)
+            ->where('status', 'pending')
+            ->latest()
+            ->first();
+
+        if (!$payment) {
+            $payment = Payment::create([
+                'type' => Payment::TYPE_PLAYER_SUBSCRIPTION,
+                'subscription_id' => $subscription->id,
+                'tournament_id' => $subscription->tournament_id,
+                'player_id' => $subscription->player_id,
+                'amount' => PlatformSetting::playerSubscriptionFee(),
+                'status' => 'pending',
+                'payment_method' => 'manual',
+                'transaction_id' => null,
+                'merchant_order_id' => 'MANUAL-' . Str::upper(Str::random(10)),
+                'payment_details' => json_encode(['confirmed_by_organizer' => true]),
+            ]);
+        }
+
+        $txn = 'MANUAL-OK-' . Str::upper(Str::random(10));
+        $payment = $this->completion->markCompleted($payment, $txn, [
+            'confirmed_by_organizer' => $organizerId,
+            'method' => 'manual',
+        ]);
+
+        return [
+            'message' => 'Player marked as paid.',
+            'subscription' => $subscription->fresh(),
+            'payment' => $payment,
+        ];
+    }
+
+    protected function completeOrganizerPublishFree(
+        Tournament $tournament,
+        int $organizerId,
+        float $fee,
+        string $reason
+    ): array {
+        $tournament->update([
+            'status' => 'published',
+            'publish_path' => 'payment',
+            'is_published' => true,
+            'rejection_reason' => null,
+            'approved_by' => null,
+            'approved_at' => now(),
+        ]);
+
+        $payment = Payment::create([
+            'type' => Payment::TYPE_ORGANIZER_PUBLISH,
+            'tournament_id' => $tournament->id,
+            'organizer_id' => $organizerId,
+            'amount' => $reason === 'free_mode' ? $fee : 0,
+            'status' => 'completed',
+            'payment_method' => 'free',
+            'transaction_id' => 'FREE-' . Str::upper(Str::random(12)),
+            'merchant_order_id' => null,
+            'payment_details' => json_encode(['reason' => $reason]),
+        ]);
+
+        return [
+            'requires_payment' => false,
+            'payment_method' => 'free',
+            'message' => 'Tournament published successfully.',
+            'tournament' => $tournament->fresh(),
+            'payment' => $payment,
         ];
     }
 

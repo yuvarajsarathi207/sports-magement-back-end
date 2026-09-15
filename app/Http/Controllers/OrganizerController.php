@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Tournament;
 use App\Models\SportsCategory;
 use App\Models\PlatformSetting;
+use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -54,9 +55,32 @@ class OrganizerController extends Controller
         }
 
         $tournaments = Tournament::where('organizer_id', $user->id)
-            ->with(['sportsCategory', 'interests'])
+            ->with(['sportsCategory', 'interests', 'subscriptions.player'])
+            ->withCount([
+                'interests',
+                'subscriptions as paid_subscriptions_count' => fn ($q) => $q->where('status', 'active'),
+                'subscriptions as pending_subscriptions_count' => fn ($q) => $q->where('status', 'pending'),
+            ])
             ->latest()
             ->get();
+
+        $tournamentIds = $tournaments->pluck('id');
+
+        $paidSubscriptions = Subscription::whereIn('tournament_id', $tournamentIds)
+            ->where('status', 'active')
+            ->with(['player', 'tournament'])
+            ->latest()
+            ->get();
+
+        $pendingSubscriptions = Subscription::whereIn('tournament_id', $tournamentIds)
+            ->where('status', 'pending')
+            ->with(['player', 'tournament'])
+            ->latest()
+            ->get();
+
+        $entryFeeCollected = $paidSubscriptions->sum(function ($sub) {
+            return (float) ($sub->tournament->entry_fee ?? 0);
+        });
 
         $stats = [
             'total_tournaments' => $tournaments->count(),
@@ -65,6 +89,12 @@ class OrganizerController extends Controller
             'pending_payment' => $tournaments->where('status', 'pending_payment')->count(),
             'published_tournaments' => $tournaments->where('status', 'published')->count(),
             'rejected_tournaments' => $tournaments->where('status', 'rejected')->count(),
+            'total_interested' => $tournaments->sum('interests_count'),
+            'paid_players' => $paidSubscriptions->count(),
+            'pending_players' => $pendingSubscriptions->count(),
+            'entry_fee_collected' => round($entryFeeCollected, 2),
+            'total_slots' => $tournaments->sum('slot_count'),
+            'slots_filled' => $paidSubscriptions->count(),
             'publish_mode' => PlatformSetting::publishMode(),
             'organizer_publish_fee' => PlatformSetting::organizerPublishFee(),
         ];
@@ -73,11 +103,27 @@ class OrganizerController extends Controller
             'tournaments as tournament_count' => fn ($q) => $q->where('organizer_id', $user->id),
         ])->get();
 
+        $upcoming = $tournaments
+            ->where('status', 'published')
+            ->filter(fn ($t) => $t->start_date && $t->start_date->isFuture())
+            ->sortBy('start_date')
+            ->take(5)
+            ->values();
+
+        $needsAttention = $tournaments
+            ->filter(fn ($t) => in_array($t->status, ['draft', 'pending_approval', 'pending_payment', 'rejected'], true))
+            ->take(5)
+            ->values();
+
         return response()->json([
             'tournaments' => $tournaments,
             'stats' => $stats,
             'category_stats' => $categoryStats,
             'settings' => PlatformSetting::publicPayload(),
+            'recent_paid_players' => $paidSubscriptions->take(8)->values(),
+            'pending_players' => $pendingSubscriptions->take(8)->values(),
+            'upcoming_tournaments' => $upcoming,
+            'needs_attention' => $needsAttention,
         ]);
     }
 
@@ -108,8 +154,12 @@ class OrganizerController extends Controller
         }
 
         $query = Tournament::where('organizer_id', $user->id)
-            ->with(['sportsCategory', 'interests.player'])
-            ->withCount('interests');
+            ->with(['sportsCategory', 'interests.player', 'subscriptions.player'])
+            ->withCount([
+                'interests',
+                'subscriptions as paid_subscriptions_count' => fn ($q) => $q->where('status', 'active'),
+                'subscriptions as pending_subscriptions_count' => fn ($q) => $q->where('status', 'pending'),
+            ]);
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
@@ -241,14 +291,28 @@ class OrganizerController extends Controller
 
         $tournament = Tournament::where('id', $id)
             ->where('organizer_id', $user->id)
-            ->with(['sportsCategory', 'interests.player'])
+            ->with([
+                'sportsCategory',
+                'interests.player',
+                'subscriptions.player',
+            ])
             ->firstOrFail();
 
+        $subscriptions = $tournament->subscriptions;
+        $paidPlayers = $subscriptions->where('status', 'active')->values();
+        $pendingPlayers = $subscriptions->where('status', 'pending')->values();
         $interestedPlayersCount = $tournament->interests->count();
+        $entryFeeCollected = $paidPlayers->count() * (float) $tournament->entry_fee;
 
         return response()->json([
             'tournament' => $tournament,
             'interested_players_count' => $interestedPlayersCount,
+            'paid_players_count' => $paidPlayers->count(),
+            'pending_players_count' => $pendingPlayers->count(),
+            'slots_remaining' => max(0, (int) $tournament->slot_count - $paidPlayers->count()),
+            'entry_fee_collected' => round($entryFeeCollected, 2),
+            'paid_players' => $paidPlayers,
+            'pending_players' => $pendingPlayers,
         ]);
     }
 
@@ -378,6 +442,31 @@ class OrganizerController extends Controller
         $result['settings'] = PlatformSetting::publicPayload();
 
         return response()->json($result, !empty($result['requires_payment']) ? 200 : 200);
+    }
+
+    public function confirmPlayerPayment($tournamentId, $subscriptionId, PaymentGatewayOrchestrator $payments)
+    {
+        $user = Auth::user();
+
+        if (!$user->isOrganizer()) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $tournament = Tournament::where('id', $tournamentId)
+            ->where('organizer_id', $user->id)
+            ->firstOrFail();
+
+        $subscription = Subscription::where('id', $subscriptionId)
+            ->where('tournament_id', $tournament->id)
+            ->firstOrFail();
+
+        try {
+            $result = $payments->confirmManualSubscriptionPayment($subscription, $user->id);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => $e->getMessage()], 400);
+        }
+
+        return response()->json($result);
     }
 
     private function composeLocation(Request $request): string

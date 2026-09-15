@@ -79,10 +79,35 @@ class PlayerController extends Controller
             'tournaments as published_count' => fn ($q) => $q->publishedForPlayers(),
         ])->get();
 
+        $activeSubs = $subscriptions->where('status', 'active');
+        $pendingSubs = $subscriptions->where('status', 'pending');
+
+        $upcoming = $activeSubs
+            ->filter(fn ($s) => $s->tournament && $s->tournament->start_date && $s->tournament->start_date->isFuture())
+            ->sortBy(fn ($s) => $s->tournament->start_date)
+            ->take(5)
+            ->values();
+
+        $discover = Tournament::publishedForPlayers()
+            ->with('sportsCategory')
+            ->whereNotIn('id', $subscribedTournamentIds)
+            ->latest()
+            ->take(6)
+            ->get()
+            ->each(fn ($t) => $this->hideLocationFields($t));
+
         return response()->json([
-            'subscriptions' => $subscriptions,
+            'subscriptions' => $subscriptions->values(),
             'interests' => $interests,
             'category_stats' => $categoryStats,
+            'stats' => [
+                'active' => $activeSubs->count(),
+                'pending' => $pendingSubs->count(),
+                'interested' => $interests->count(),
+                'upcoming' => $upcoming->count(),
+            ],
+            'upcoming' => $upcoming,
+            'discover' => $discover,
         ]);
     }
 

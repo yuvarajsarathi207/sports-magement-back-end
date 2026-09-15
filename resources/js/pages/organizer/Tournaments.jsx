@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../../api/client';
 import TournamentCard from '../../components/TournamentCard';
 import CategoryFilter from '../../components/CategoryFilter';
@@ -8,15 +8,21 @@ import { tournamentBadge, publishPathBadge } from '../../utils/tournamentStatus'
 
 export default function OrganizerTournaments() {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [tournaments, setTournaments] = useState([]);
     const [categories, setCategories] = useState([]);
-    const [status, setStatus] = useState('');
-    const [categoryId, setCategoryId] = useState('');
+    const [status, setStatus] = useState(searchParams.get('status') || '');
+    const [categoryId, setCategoryId] = useState(searchParams.get('category_id') || '');
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         api.get('/sports-categories').then((res) => setCategories(res.data));
     }, []);
+
+    useEffect(() => {
+        setStatus(searchParams.get('status') || '');
+        setCategoryId(searchParams.get('category_id') || '');
+    }, [searchParams]);
 
     useEffect(() => {
         setLoading(true);
@@ -29,10 +35,38 @@ export default function OrganizerTournaments() {
             .finally(() => setLoading(false));
     }, [status, categoryId]);
 
+    const updateStatus = (value) => {
+        const next = new URLSearchParams(searchParams);
+        if (value) next.set('status', value);
+        else next.delete('status');
+        setSearchParams(next);
+        setStatus(value);
+    };
+
+    const updateCategory = (value) => {
+        const next = new URLSearchParams(searchParams);
+        if (value) next.set('category_id', value);
+        else next.delete('category_id');
+        setSearchParams(next);
+        setCategoryId(value);
+    };
+
     return (
         <div className="page">
+            <div className="page-header">
+                <div className="page-header-text">
+                    <h1 className="page-title" style={{ marginBottom: 0 }}>Your events</h1>
+                    <p className="page-subtitle">Manage drafts, live tournaments, and player payments.</p>
+                </div>
+                <div className="page-actions">
+                    <button type="button" className="btn btn-primary btn-sm" onClick={() => navigate('/organizer/tournaments/new')}>
+                        + Create
+                    </button>
+                </div>
+            </div>
+
             <div className="filter-bar">
-                <select value={status} onChange={(e) => setStatus(e.target.value)} className="select">
+                <select value={status} onChange={(e) => updateStatus(e.target.value)} className="select">
                     <option value="">All Status</option>
                     <option value="draft">Draft</option>
                     <option value="pending_approval">Pending Approval</option>
@@ -45,7 +79,7 @@ export default function OrganizerTournaments() {
             <CategoryFilter
                 categories={categories}
                 value={categoryId}
-                onChange={setCategoryId}
+                onChange={updateCategory}
                 label="Filter events"
             />
 

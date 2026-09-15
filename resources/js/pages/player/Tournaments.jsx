@@ -33,6 +33,13 @@ export default function PlayerTournaments() {
 
     return (
         <div className="page">
+            <div className="page-header">
+                <div className="page-header-text">
+                    <h1 className="page-title" style={{ marginBottom: 0 }}>Browse tournaments</h1>
+                    <p className="page-subtitle">Find live events near you and join with a subscription.</p>
+                </div>
+            </div>
+
             <CategoryFilter
                 categories={categories}
                 value={categoryId}

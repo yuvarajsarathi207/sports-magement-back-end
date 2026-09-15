@@ -115,6 +115,21 @@ export default function AdminDashboard() {
 
     return (
         <div className="page">
+            <div className="page-header">
+                <div className="page-header-text">
+                    <h1 className="page-title" style={{ marginBottom: 0 }}>Admin Dashboard</h1>
+                    <p className="page-subtitle">Approvals, payments, and platform health at a glance.</p>
+                </div>
+                <div className="page-actions">
+                    <button type="button" className="btn btn-outline btn-sm" onClick={() => navigate('/admin/settings')}>
+                        Settings
+                    </button>
+                    <button type="button" className="btn btn-primary btn-sm" onClick={() => navigate('/admin/tournaments')}>
+                        Review queue
+                    </button>
+                </div>
+            </div>
+
             <StatusStats items={statusItems} />
 
             <section className="section">

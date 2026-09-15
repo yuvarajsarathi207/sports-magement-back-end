@@ -433,7 +433,7 @@
                             <i class="bi bi-geo-alt-fill"></i>
                             <div>
                                 <strong class="d-block mb-1">Address</strong>
-                                <span class="text-muted">No 3 kanakar st<br>Katpadi<br>Vellore 632007</span>
+                                <span class="text-muted">No:3, Kanakar street<br>Katpadi<br>Vellore 632007</span>
                             </div>
                         </div>
                         <div class="contact-info-item">

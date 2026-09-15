@@ -159,35 +159,49 @@ class AdminController extends Controller
             'organizer_publish_fee' => 'required|numeric|min:0',
             'player_subscription_fee' => 'required|numeric|min:0',
             'phonepe_env' => 'required|in:sandbox,production',
+            'app_theme' => 'required|in:ocean,forest,sunset,royal,midnight',
+            'payment_method' => 'required|in:phonepe,manual,free',
+            'platform_name' => 'required|string|max:80',
+            'support_email' => 'nullable|email|max:120',
+            'support_phone' => 'nullable|string|max:20',
+            'payment_instructions' => 'nullable|string|max:1000',
         ]);
 
-        if ($validated['phonepe_env'] === 'sandbox'
-            && (!filled(config('services.phonepe.sandbox.client_id')) || !filled(config('services.phonepe.sandbox.client_secret')))
-        ) {
-            return response()->json([
-                'message' => 'Sandbox PhonePe credentials are missing in .env (PHONEPE_CLIENT_ID_SANDBOX / PHONEPE_CLIENT_SECRET_SANDBOX).',
-            ], 422);
-        }
+        if ($validated['payment_method'] === 'phonepe') {
+            if ($validated['phonepe_env'] === 'sandbox'
+                && (!filled(config('services.phonepe.sandbox.client_id')) || !filled(config('services.phonepe.sandbox.client_secret')))
+            ) {
+                return response()->json([
+                    'message' => 'Sandbox PhonePe credentials are missing in .env (PHONEPE_CLIENT_ID_SANDBOX / PHONEPE_CLIENT_SECRET_SANDBOX).',
+                ], 422);
+            }
 
-        if ($validated['phonepe_env'] === 'production'
-            && (!filled(config('services.phonepe.production.client_id')) || !filled(config('services.phonepe.production.client_secret')))
-        ) {
-            return response()->json([
-                'message' => 'Production PhonePe credentials are missing in .env (PHONEPE_CLIENT_ID_PRODUCTION / PHONEPE_CLIENT_SECRET_PRODUCTION).',
-            ], 422);
+            if ($validated['phonepe_env'] === 'production'
+                && (!filled(config('services.phonepe.production.client_id')) || !filled(config('services.phonepe.production.client_secret')))
+            ) {
+                return response()->json([
+                    'message' => 'Production PhonePe credentials are missing in .env (PHONEPE_CLIENT_ID_PRODUCTION / PHONEPE_CLIENT_SECRET_PRODUCTION).',
+                ], 422);
+            }
         }
 
         PlatformSetting::setValue(PlatformSetting::KEY_PUBLISH_MODE, $validated['tournament_publish_mode']);
         PlatformSetting::setValue(PlatformSetting::KEY_ORGANIZER_PUBLISH_FEE, number_format((float) $validated['organizer_publish_fee'], 2, '.', ''));
         PlatformSetting::setValue(PlatformSetting::KEY_PLAYER_SUBSCRIPTION_FEE, number_format((float) $validated['player_subscription_fee'], 2, '.', ''));
         PlatformSetting::setValue(PlatformSetting::KEY_PHONEPE_ENV, $validated['phonepe_env']);
+        PlatformSetting::setValue(PlatformSetting::KEY_APP_THEME, $validated['app_theme']);
+        PlatformSetting::setValue(PlatformSetting::KEY_PAYMENT_METHOD, $validated['payment_method']);
+        PlatformSetting::setValue(PlatformSetting::KEY_PLATFORM_NAME, $validated['platform_name']);
+        PlatformSetting::setValue(PlatformSetting::KEY_SUPPORT_EMAIL, $validated['support_email'] ?? '');
+        PlatformSetting::setValue(PlatformSetting::KEY_SUPPORT_PHONE, $validated['support_phone'] ?? '');
+        PlatformSetting::setValue(PlatformSetting::KEY_PAYMENT_INSTRUCTIONS, $validated['payment_instructions'] ?? '');
 
         // Drop cached OAuth tokens so next payment uses the selected env
         \Illuminate\Support\Facades\Cache::forget('phonepe_oauth_token_sandbox');
         \Illuminate\Support\Facades\Cache::forget('phonepe_oauth_token_production');
 
         return response()->json([
-            'message' => 'Settings updated successfully.',
+            'message' => 'Preferences updated successfully.',
             'settings' => PlatformSetting::adminPayload(),
         ]);
     }

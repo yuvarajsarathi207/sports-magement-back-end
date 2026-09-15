@@ -53,7 +53,6 @@ class PaymentCompletionService
 
             $payment->update([
                 'status' => 'completed',
-                'payment_method' => 'phonepe',
                 'transaction_id' => $transactionId ?: $payment->transaction_id,
                 'payment_details' => $details !== null ? json_encode($details) : $payment->payment_details,
             ]);
@@ -92,7 +91,6 @@ class PaymentCompletionService
 
             $payment->update([
                 'status' => 'failed',
-                'payment_method' => 'phonepe',
                 'payment_details' => $details !== null ? json_encode($details) : $payment->payment_details,
             ]);
 

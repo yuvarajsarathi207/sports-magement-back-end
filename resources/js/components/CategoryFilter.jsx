@@ -17,8 +17,8 @@ export default function CategoryFilter({
 
     return (
         <div className="category-filter-wrap">
-            <p className="category-filter-label">{label}</p>
-            <div className="category-filter-scroll" role="tablist" aria-label={label}>
+            {label ? <p className="category-filter-label">{label}</p> : null}
+            <div className="category-filter-scroll" role="tablist" aria-label={label || 'Sport category'}>
                 <button
                     type="button"
                     role="tab"

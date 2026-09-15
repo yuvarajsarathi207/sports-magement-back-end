@@ -13,6 +13,8 @@ export default function PlayerTournamentDetail() {
     const [subscription, setSubscription] = useState(null);
     const [hasInterest, setHasInterest] = useState(false);
     const [subscriptionFee, setSubscriptionFee] = useState(0);
+    const [paymentMethod, setPaymentMethod] = useState('phonepe');
+    const [paymentInstructions, setPaymentInstructions] = useState('');
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState('');
     const [message, setMessage] = useState('');
@@ -36,6 +38,8 @@ export default function PlayerTournamentDetail() {
                         ?? 0
                 )
             );
+            setPaymentMethod(settingsRes.data.payment_method || 'phonepe');
+            setPaymentInstructions(settingsRes.data.payment_instructions || '');
 
             const subs = dashRes.data.subscriptions || [];
             const sub = subs.find((s) => String(s.tournament_id) === String(id));
@@ -106,6 +110,14 @@ export default function PlayerTournamentDetail() {
             const { data } = await api.post(`/player/subscriptions/${subscription.id}/pay`);
             if (data.redirect_url) {
                 window.location.href = data.redirect_url;
+                return;
+            }
+            if (data.payment_method === 'manual') {
+                setMessage(data.message || 'Follow the payment instructions below. Organizer will confirm once paid.');
+                if (data.payment_instructions) {
+                    setPaymentInstructions(data.payment_instructions);
+                }
+                setPaymentMethod('manual');
                 return;
             }
             setMessage(data.message || 'Payment successful! Full details unlocked.');
@@ -207,18 +219,33 @@ export default function PlayerTournamentDetail() {
                 )}
 
                 {isSubscribed && !isActive && (
-                    <button
-                        type="button"
-                        className="btn btn-primary btn-block"
-                        onClick={pay}
-                        disabled={actionLoading === 'pay'}
-                    >
-                        {actionLoading === 'pay'
-                            ? 'Processing...'
-                            : subscriptionFee > 0
-                                ? `💳 Pay ₹${feeLabel}`
-                                : '✅ Activate Subscription'}
-                    </button>
+                    <>
+                        {paymentMethod === 'manual' && paymentInstructions && (
+                            <div className="manual-pay-box">
+                                <h3>Offline payment instructions</h3>
+                                <p>{paymentInstructions}</p>
+                            </div>
+                        )}
+                        <button
+                            type="button"
+                            className="btn btn-primary btn-block"
+                            onClick={pay}
+                            disabled={actionLoading === 'pay'}
+                        >
+                            {actionLoading === 'pay'
+                                ? 'Processing...'
+                                : paymentMethod === 'manual'
+                                    ? (subscriptionFee > 0 ? `📋 Get pay instructions — ₹${feeLabel}` : '✅ Request activation')
+                                    : subscriptionFee > 0
+                                        ? `💳 Pay ₹${feeLabel}`
+                                        : '✅ Activate Subscription'}
+                        </button>
+                        {paymentMethod === 'manual' && (
+                            <p className="text-muted text-center">
+                                After paying, wait for the organizer to confirm your payment.
+                            </p>
+                        )}
+                    </>
                 )}
 
                 {isActive && (
