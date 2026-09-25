@@ -31,7 +31,9 @@ export default function Register() {
         setLoading(true);
         try {
             const user = await register(form);
-            navigate(user.role === 'organizer' ? '/organizer' : '/');
+            if (user.role === 'organizer') navigate('/organizer');
+            else if (user.role === 'turf_owner') navigate('/turf/owner');
+            else navigate('/');
         } catch (err) {
             const errors = err.response?.data?.errors;
             const msg = errors
@@ -49,7 +51,7 @@ export default function Register() {
                 <div className="auth-brand">
                     <span className="brand-icon">🏆</span>
                     <h1>Join Keep Playing</h1>
-                    <p>Register as a player or organizer</p>
+                    <p>Register as a player, organizer, or turf owner</p>
                 </div>
 
                 <Alert message={error} />
@@ -102,14 +104,14 @@ export default function Register() {
                     <div className="role-picker">
                         <span className="field-label">I am a</span>
                         <div className="role-options">
-                            {['player', 'organizer'].map((role) => (
+                            {['player', 'organizer', 'turf_owner'].map((role) => (
                                 <button
                                     key={role}
                                     type="button"
                                     className={`role-btn${form.role === role ? ' active' : ''}`}
                                     onClick={() => update('role', role)}
                                 >
-                                    {role === 'player' ? '🎮 Player' : '📋 Organizer'}
+                                    {role === 'player' ? '🎮 Player' : role === 'organizer' ? '📋 Organizer' : '🏟️ Turf Owner'}
                                 </button>
                             ))}
                         </div>

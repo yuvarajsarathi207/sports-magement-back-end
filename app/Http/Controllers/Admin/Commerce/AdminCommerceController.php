@@ -46,6 +46,19 @@ class AdminCommerceController extends Controller
         $this->ensureAdmin();
 
         $lowStock = PlatformSetting::commerceLowStockThreshold();
+        $toShipStatuses = [Order::STATUS_CONFIRMED, Order::STATUS_PROCESSING, Order::STATUS_PACKED];
+
+        $ordersToShip = Order::with('user:id,name,email')
+            ->whereIn('status', $toShipStatuses)
+            ->latest()
+            ->limit(8)
+            ->get(['id', 'order_number', 'user_id', 'status', 'total_amount', 'created_at']);
+
+        $lowStockVariants = ProductVariant::with('product:id,name')
+            ->where('available_quantity', '<=', $lowStock)
+            ->orderBy('available_quantity')
+            ->limit(8)
+            ->get(['id', 'product_id', 'sku', 'name', 'size', 'color', 'available_quantity']);
 
         return response()->json([
             'stats' => [
@@ -53,10 +66,12 @@ class AdminCommerceController extends Controller
                 'active_products' => Product::where('status', Product::STATUS_ACTIVE)->count(),
                 'orders' => Order::count(),
                 'orders_pending_payment' => Order::where('status', Order::STATUS_PAYMENT_PENDING)->count(),
-                'orders_to_ship' => Order::whereIn('status', [Order::STATUS_CONFIRMED, Order::STATUS_PROCESSING, Order::STATUS_PACKED])->count(),
+                'orders_to_ship' => Order::whereIn('status', $toShipStatuses)->count(),
                 'low_stock_variants' => ProductVariant::where('available_quantity', '<=', $lowStock)->count(),
                 'return_requests' => OrderReturn::where('status', OrderReturn::STATUS_REQUESTED)->count(),
             ],
+            'orders_to_ship' => $ordersToShip,
+            'low_stock_variants' => $lowStockVariants,
             'settings' => PlatformSetting::commercePayload(),
         ]);
     }
@@ -412,6 +427,61 @@ class AdminCommerceController extends Controller
         }
 
         return response()->json(['variant' => $variant->fresh()]);
+    }
+
+    public function updateVariant(Request $request, int $id)
+    {
+        $this->ensureAdmin();
+        $variant = ProductVariant::with('product')->findOrFail($id);
+
+        $data = $request->validate([
+            'sku' => 'sometimes|string|max:100',
+            'name' => 'nullable|string|max:120',
+            'size' => 'nullable|string|max:50',
+            'color' => 'nullable|string|max:50',
+            'price' => 'sometimes|numeric|min:0',
+            'discount_price' => 'nullable|numeric|min:0',
+            'tax_percent' => 'nullable|numeric|min:0|max:100',
+            'status' => 'nullable|in:active,inactive,out_of_stock',
+            'available_quantity' => 'nullable|integer|min:0',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $qty = $data['available_quantity'] ?? null;
+        unset($data['available_quantity'], $data['notes']);
+
+        if (!empty($data)) {
+            $variant->update($data);
+        }
+
+        if ($qty !== null) {
+            try {
+                $variant = $this->inventoryService->adjust(
+                    $variant->id,
+                    (int) $qty,
+                    Auth::id(),
+                    $request->input('notes') ?? 'Inventory edit'
+                );
+            } catch (RuntimeException $e) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+        }
+
+        return response()->json(['variant' => $variant->fresh('product')]);
+    }
+
+    public function deleteVariant(int $id)
+    {
+        $this->ensureAdmin();
+        $variant = ProductVariant::findOrFail($id);
+
+        if ((int) $variant->reserved_quantity > 0) {
+            return response()->json(['message' => 'Cannot delete a variant with reserved stock.'], 422);
+        }
+
+        $variant->delete();
+
+        return response()->json(['message' => 'Variant deleted']);
     }
 
     // ——— Inventory ———

@@ -10,7 +10,7 @@ class AdminSeeder extends Seeder
 {
     public function run(): void
     {
-        User::updateOrCreate(
+        $admin = User::updateOrCreate(
             ['email' => 'admin@tournamenthub.com'],
             [
                 'name' => 'Platform Admin',
@@ -19,5 +19,6 @@ class AdminSeeder extends Seeder
                 'password' => Hash::make('Admin@12345'),
             ]
         );
+        $admin->assignRoleByName('platform_admin');
     }
 }

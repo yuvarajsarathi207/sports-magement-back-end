@@ -13,6 +13,7 @@ use App\Models\Commerce\Shipment;
 use App\Models\Commerce\UserAddress;
 use App\Models\User;
 use App\Services\Commerce\Payments\CommercePaymentService;
+use App\Services\Platform\PaymentService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -25,7 +26,8 @@ class OrderService
         protected CartService $cartService,
         protected InventoryService $inventoryService,
         protected CommercePaymentService $paymentService,
-        protected DeliveryService $deliveryService
+        protected DeliveryService $deliveryService,
+        protected PaymentService $platformPayments
     ) {
     }
 
@@ -103,6 +105,16 @@ class OrderService
             ]);
 
             $paymentResult = $this->paymentService->initiate($order, $user, $paymentMethod);
+
+            $this->platformPayments->createIntent(
+                $order,
+                $user,
+                'shop',
+                (float) $order->total_amount,
+                $paymentMethod,
+                'order_' . $order->order_number,
+                ['order_number' => $order->order_number]
+            );
 
             if ($paymentMethod === Order::METHOD_COD) {
                 $this->inventoryService->consumeOrderReservations($order->id);

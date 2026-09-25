@@ -3,9 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
+use App\Models\Platform\PaymentIntent;
+use App\Models\Turf\Booking;
 use App\Services\Commerce\OrderService;
 use App\Services\Commerce\Payments\CommercePaymentService;
 use App\Services\PaymentCompletionService;
+use App\Services\Turf\BookingService;
+use App\Services\Turf\TurfPaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,7 +18,9 @@ class PaymentController extends Controller
     public function __construct(
         protected PaymentCompletionService $completion,
         protected CommercePaymentService $commercePayments,
-        protected OrderService $orderService
+        protected OrderService $orderService,
+        protected TurfPaymentService $turfPayments,
+        protected BookingService $turfBookings
     ) {
     }
 
@@ -29,7 +35,6 @@ class PaymentController extends Controller
             return response()->json(['message' => 'merchantOrderId is required'], 422);
         }
 
-        // Route commerce payments without touching tournament payments
         $commercePayment = $this->commercePayments->findByMerchantOrderId($merchantOrderId);
         if ($commercePayment) {
             try {
@@ -44,6 +49,30 @@ class PaymentController extends Controller
             return response()->json([
                 'message' => 'Commerce payment status synced',
                 'payment' => $payment,
+            ]);
+        }
+
+        $intent = PaymentIntent::where('merchant_order_id', $merchantOrderId)->where('module', 'turf')->first();
+        if ($intent) {
+            try {
+                $intent = $this->turfPayments->syncFromGateway($intent);
+                if ($intent->status === PaymentIntent::STATUS_PAID && $intent->payable instanceof Booking) {
+                    $booking = $intent->payable;
+                    if ($booking->status === Booking::STATUS_HELD) {
+                        $this->turfBookings->confirmBooking($booking);
+                    }
+                }
+            } catch (\Throwable $e) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'payment' => $intent,
+                ], 502);
+            }
+
+            return response()->json([
+                'message' => 'Turf payment status synced',
+                'type' => 'turf',
+                'payment' => $intent->fresh(),
             ]);
         }
 
@@ -95,6 +124,42 @@ class PaymentController extends Controller
             return response()->json([
                 'payment' => $commercePayment->fresh(['order']),
                 'type' => 'commerce',
+            ]);
+        }
+
+        $intent = PaymentIntent::where('merchant_order_id', $merchantOrderId)->where('module', 'turf')->first();
+        if ($intent) {
+            $owns = $intent->user_id === $user->id || $user->isAdmin();
+            if (!$owns) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+
+            try {
+                $intent = $this->turfPayments->syncFromGateway($intent);
+                if ($intent->status === PaymentIntent::STATUS_PAID && $intent->payable instanceof Booking) {
+                    $booking = $intent->payable;
+                    if ($booking->status === Booking::STATUS_HELD) {
+                        $this->turfBookings->confirmBooking($booking);
+                    }
+                }
+            } catch (\Throwable $e) {
+                return response()->json([
+                    'message' => $e->getMessage(),
+                    'payment' => $intent,
+                ], 502);
+            }
+
+            $bookingPayload = null;
+            if ($intent->payable instanceof Booking) {
+                $bookingPayload = $this->turfBookings->payloadWithPayment(
+                    $intent->payable->load(['items.court', 'turf', 'paymentIntents'])
+                );
+            }
+
+            return response()->json([
+                'payment' => $intent->fresh(),
+                'type' => 'turf',
+                'booking' => $bookingPayload,
             ]);
         }
 

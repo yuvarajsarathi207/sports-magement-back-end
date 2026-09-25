@@ -305,6 +305,10 @@ class PlatformSetting extends Model
             'support_email' => static::supportEmail(),
             'support_phone' => static::supportPhone(),
             'payment_instructions' => static::paymentInstructions(),
+            'turf_enabled' => (string) static::getValue('turf_enabled', '1') === '1',
+            'turf_booking_hold_minutes' => (int) static::getValue('turf_booking_hold_minutes', 10),
+            'turf_cancellation_hours' => (int) static::getValue('turf_cancellation_hours', 2),
+            'turf_require_owner_approval' => (string) static::getValue('turf_require_owner_approval', '1') === '1',
             ...static::commercePayload(),
         ];
     }

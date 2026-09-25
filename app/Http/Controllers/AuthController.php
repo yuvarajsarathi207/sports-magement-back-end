@@ -48,7 +48,7 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'mobile' => 'required|string|unique:users',
             'password' => 'required|string|min:8',
-            'role' => 'required|in:organizer,player',
+            'role' => 'required|in:organizer,player,turf_owner',
         ]);
 
         $user = User::create([
@@ -59,10 +59,24 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        $rbacRole = match ($request->role) {
+            'organizer' => 'organizer',
+            'turf_owner' => 'turf_owner',
+            default => 'player',
+        };
+        $user->assignRoleByName($rbacRole);
+
+        if ($request->role === 'turf_owner') {
+            \App\Models\Turf\TurfOwner::firstOrCreate(
+                ['user_id' => $user->id],
+                ['business_name' => $user->name . ' Turfs', 'status' => 'active']
+            );
+        }
+
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user' => $this->userPayload($user),
             'token' => $token,
         ], 201);
     }
@@ -108,9 +122,24 @@ class AuthController extends Controller
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user' => $this->userPayload($user),
             'token' => $token,
         ]);
+    }
+
+    protected function userPayload(User $user): array
+    {
+        $user->loadMissing('roles.permissions');
+
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'mobile' => $user->mobile,
+            'role' => $user->role,
+            'roles' => $user->roles->pluck('name')->values()->all(),
+            'permissions' => $user->permissionNames(),
+        ];
     }
 
     /**

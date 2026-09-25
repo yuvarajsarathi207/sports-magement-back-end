@@ -22,25 +22,41 @@ export function AuthProvider({ children }) {
         setUser(null);
     }, []);
 
-    useEffect(() => {
+    const refreshMe = useCallback(async () => {
         const token = localStorage.getItem('auth_token');
         if (!token) {
             setLoading(false);
-            return;
+            return null;
         }
-        setLoading(false);
-    }, []);
+        try {
+            const { data } = await api.get('/users/me');
+            localStorage.setItem('auth_user', JSON.stringify(data));
+            setUser(data);
+            return data;
+        } catch {
+            clearAuth();
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    }, [clearAuth]);
+
+    useEffect(() => {
+        refreshMe();
+    }, [refreshMe]);
 
     const login = async (email, password) => {
         const { data } = await api.post('/login', { email, password });
         persistAuth(data.user, data.token);
-        return data.user;
+        const me = await refreshMe();
+        return me || data.user;
     };
 
     const register = async (formData) => {
         const { data } = await api.post('/register', formData);
         persistAuth(data.user, data.token);
-        return data.user;
+        const me = await refreshMe();
+        return me || data.user;
     };
 
     const logout = async () => {
@@ -52,12 +68,31 @@ export function AuthProvider({ children }) {
         clearAuth();
     };
 
+    const hasPermission = (permission) => {
+        if (!user) return false;
+        if (user.role === 'admin' || user.permissions?.includes('*')) return true;
+        return Array.isArray(user.permissions) && user.permissions.includes(permission);
+    };
+
     const isPlayer = user?.role === 'player';
     const isOrganizer = user?.role === 'organizer';
     const isAdmin = user?.role === 'admin';
+    const isTurfOwner = user?.role === 'turf_owner' || user?.roles?.includes('turf_owner');
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, register, logout, isPlayer, isOrganizer, isAdmin }}>
+        <AuthContext.Provider value={{
+            user,
+            loading,
+            login,
+            register,
+            logout,
+            refreshMe,
+            hasPermission,
+            isPlayer,
+            isOrganizer,
+            isAdmin,
+            isTurfOwner,
+        }}>
             {children}
         </AuthContext.Provider>
     );

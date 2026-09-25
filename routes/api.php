@@ -12,6 +12,13 @@ use App\Http\Controllers\Commerce\CatalogController;
 use App\Http\Controllers\Commerce\CartController;
 use App\Http\Controllers\Commerce\CheckoutController;
 use App\Http\Controllers\Admin\Commerce\AdminCommerceController;
+use App\Http\Controllers\Admin\AdminRbacController;
+use App\Http\Controllers\Admin\AdminTurfController;
+use App\Http\Controllers\Platform\MeController;
+use App\Http\Controllers\Platform\NotificationController;
+use App\Http\Controllers\Turf\TurfController;
+use App\Http\Controllers\Turf\BookingController;
+use App\Http\Controllers\Turf\OwnerTurfController;
 use App\Models\PlatformSetting;
 
 /*
@@ -35,8 +42,51 @@ Route::match(['get', 'post'], '/commerce/payments/webhook', [CheckoutController:
 // Protected routes
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/users/me', [MeController::class, 'show']);
+    Route::get('/modules', [MeController::class, 'allModules']);
+    Route::get('/modules/available', [MeController::class, 'modules']);
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
     Route::get('/test-auth', action: [\App\Http\Controllers\TestController::class, 'testAuth']);
     Route::post('/payments/{merchantOrderId}/status', [PaymentController::class, 'checkStatus']);
+
+    // Turf booking (module access)
+    Route::middleware('module:turf')->prefix('turf')->group(function () {
+        Route::get('/venues', [TurfController::class, 'index']);
+        Route::get('/venues/{id}', [TurfController::class, 'show']);
+        Route::get('/venues/{id}/availability', [TurfController::class, 'availability']);
+
+        Route::get('/bookings', [BookingController::class, 'index']);
+        Route::post('/bookings', [BookingController::class, 'store']);
+        Route::get('/bookings/{id}', [BookingController::class, 'show']);
+        Route::post('/bookings/{id}/cancel', [BookingController::class, 'cancel']);
+        Route::post('/bookings/{id}/confirm-payment', [BookingController::class, 'confirmPayment']);
+
+        Route::prefix('owner')->group(function () {
+            Route::get('/dashboard', [OwnerTurfController::class, 'dashboard']);
+            Route::get('/venues', [OwnerTurfController::class, 'listTurfs']);
+            Route::post('/venues', [OwnerTurfController::class, 'storeTurf']);
+            Route::get('/venues/{id}', [OwnerTurfController::class, 'showTurf']);
+            Route::put('/venues/{id}', [OwnerTurfController::class, 'updateTurf']);
+            Route::post('/venues/{id}/publish', [OwnerTurfController::class, 'publishTurf']);
+            Route::post('/venues/{turfId}/courts', [OwnerTurfController::class, 'storeCourt']);
+            Route::put('/courts/{courtId}', [OwnerTurfController::class, 'updateCourt']);
+            Route::put('/courts/{courtId}/weekly-hours', [OwnerTurfController::class, 'setWeeklyHours']);
+            Route::get('/courts/{courtId}/exceptions', [OwnerTurfController::class, 'listExceptions']);
+            Route::post('/courts/{courtId}/exceptions', [OwnerTurfController::class, 'setException']);
+            Route::delete('/exceptions/{id}', [OwnerTurfController::class, 'deleteException']);
+            Route::get('/courts/{courtId}/price-rules', [OwnerTurfController::class, 'listPriceRules']);
+            Route::post('/courts/{courtId}/price-rules', [OwnerTurfController::class, 'setPriceRule']);
+            Route::put('/price-rules/{id}', [OwnerTurfController::class, 'updatePriceRule']);
+            Route::delete('/price-rules/{id}', [OwnerTurfController::class, 'deletePriceRule']);
+            Route::get('/bookings', [OwnerTurfController::class, 'listBookings']);
+            Route::post('/bookings/{id}/cancel', [OwnerTurfController::class, 'cancelBooking']);
+            Route::post('/bookings/{id}/confirm', [OwnerTurfController::class, 'confirmBooking']);
+            Route::post('/bookings/{id}/no-show', [OwnerTurfController::class, 'markNoShow']);
+            Route::post('/bookings/{id}/complete', [OwnerTurfController::class, 'markCompleted']);
+        });
+    });
 
     // Admin routes
     Route::prefix('admin')->group(function () {
@@ -48,6 +98,47 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/tournaments/{id}/approve', [AdminController::class, 'approveTournament']);
         Route::post('/tournaments/{id}/reject', [AdminController::class, 'rejectTournament']);
         Route::post('/tournaments/{id}/unpublish', [AdminController::class, 'unpublishTournament']);
+
+        Route::prefix('rbac')->group(function () {
+            Route::get('/overview', [AdminRbacController::class, 'overview']);
+            Route::get('/roles', [AdminRbacController::class, 'listRoles']);
+            Route::post('/roles', [AdminRbacController::class, 'storeRole']);
+            Route::put('/roles/{id}', [AdminRbacController::class, 'updateRole']);
+            Route::delete('/roles/{id}', [AdminRbacController::class, 'deleteRole']);
+            Route::get('/permissions', [AdminRbacController::class, 'listPermissions']);
+            Route::post('/permissions', [AdminRbacController::class, 'storePermission']);
+            Route::put('/permissions/{id}', [AdminRbacController::class, 'updatePermission']);
+            Route::delete('/permissions/{id}', [AdminRbacController::class, 'deletePermission']);
+        });
+
+        Route::prefix('turf')->group(function () {
+            Route::get('/dashboard', [AdminTurfController::class, 'dashboard']);
+            Route::get('/settings', [AdminTurfController::class, 'getSettings']);
+            Route::put('/settings', [AdminTurfController::class, 'updateSettings']);
+
+            Route::get('/venues', [AdminTurfController::class, 'index']);
+            Route::post('/venues', [AdminTurfController::class, 'store']);
+            Route::get('/venues/{id}', [AdminTurfController::class, 'show']);
+            Route::put('/venues/{id}', [AdminTurfController::class, 'update']);
+            Route::delete('/venues/{id}', [AdminTurfController::class, 'delete']);
+            Route::post('/venues/{id}/publish', [AdminTurfController::class, 'publish']);
+            Route::post('/venues/{id}/unpublish', [AdminTurfController::class, 'unpublish']);
+            Route::post('/venues/{id}/approve', [AdminTurfController::class, 'approveTurf']);
+            Route::post('/venues/{id}/reject', [AdminTurfController::class, 'rejectTurf']);
+            Route::post('/venues/{id}/suspend', [AdminTurfController::class, 'suspendTurf']);
+            Route::post('/venues/{turfId}/courts', [AdminTurfController::class, 'storeCourt']);
+
+            Route::get('/owners', [AdminTurfController::class, 'owners']);
+            Route::post('/owners/{id}/approve', [AdminTurfController::class, 'approveOwner']);
+            Route::post('/owners/{id}/suspend', [AdminTurfController::class, 'suspendOwner']);
+            Route::post('/owners/{id}/activate', [AdminTurfController::class, 'activateOwner']);
+
+            Route::get('/bookings', [AdminTurfController::class, 'listBookings']);
+            Route::post('/bookings/{id}/cancel', [AdminTurfController::class, 'cancelBooking']);
+            Route::post('/bookings/{id}/confirm', [AdminTurfController::class, 'confirmBooking']);
+            Route::post('/bookings/{id}/no-show', [AdminTurfController::class, 'markNoShow']);
+            Route::post('/bookings/{id}/complete', [AdminTurfController::class, 'markCompleted']);
+        });
 
         Route::prefix('commerce')->group(function () {
             Route::get('/dashboard', [AdminCommerceController::class, 'dashboard']);
@@ -71,6 +162,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('/products/{id}', [AdminCommerceController::class, 'deleteProduct']);
             Route::post('/products/{id}/images', [AdminCommerceController::class, 'uploadProductImage']);
             Route::post('/products/{id}/variants', [AdminCommerceController::class, 'upsertVariant']);
+            Route::put('/variants/{id}', [AdminCommerceController::class, 'updateVariant']);
+            Route::delete('/variants/{id}', [AdminCommerceController::class, 'deleteVariant']);
 
             Route::get('/inventory', [AdminCommerceController::class, 'inventory']);
             Route::get('/inventory/transactions', [AdminCommerceController::class, 'inventoryTransactions']);

@@ -1,8 +1,24 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import api from '../../../api/client';
 import Alert from '../../../components/Alert';
 import LoaderScreen from '../../../components/LoaderScreen';
+import StatusStats from '../../../components/StatusStats';
+
+function formatMoney(amount) {
+    return Number(amount || 0).toLocaleString('en-IN', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+    });
+}
+
+function variantLabel(variant) {
+    const parts = [variant.product?.name || variant.name || 'Variant'];
+    if (variant.sku) parts.push(variant.sku);
+    const attrs = [variant.size, variant.color].filter(Boolean).join(' / ');
+    if (attrs) parts.push(attrs);
+    return parts.join(' · ');
+}
 
 export default function AdminCommerceDashboard() {
     const navigate = useNavigate();
@@ -18,38 +34,101 @@ export default function AdminCommerceDashboard() {
     if (!data && !error) return <LoaderScreen message="Loading commerce..." />;
 
     const stats = data?.stats || {};
+    const ordersToShip = data?.orders_to_ship || [];
+    const lowStockVariants = data?.low_stock_variants || [];
+
+    const statusItems = [
+        { value: stats.orders_to_ship || 0, label: 'To ship', icon: '📦', tone: 'warning' },
+        { value: stats.low_stock_variants || 0, label: 'Low stock', icon: '📉', tone: 'danger' },
+        { value: stats.return_requests || 0, label: 'Returns', icon: '↩️', tone: 'warning' },
+        { value: stats.orders || 0, label: 'Orders', icon: '🧾', tone: 'info' },
+        { value: stats.active_products || 0, label: 'Active', icon: '✅', tone: 'success' },
+    ];
 
     return (
         <div className="page">
             <div className="page-header">
-                <div>
-                    <h1 className="page-title" style={{ marginBottom: 0 }}>Commerce</h1>
-                    <p className="page-subtitle">Products, inventory, and orders</p>
+                <div className="page-header-text">
+                    <h1 className="page-title" style={{ marginBottom: 0 }}>Shop Dashboard</h1>
+                    <p className="page-subtitle">Orders to ship and inventory that needs attention.</p>
+                </div>
+                <div className="page-actions">
+                    <button type="button" className="btn btn-primary btn-sm" onClick={() => navigate('/admin/commerce/orders')}>
+                        Orders
+                    </button>
                 </div>
             </div>
+
             {error && <Alert type="error">{error}</Alert>}
-            <div className="status-stats">
-                {[
-                    ['Products', stats.products],
-                    ['Active', stats.active_products],
-                    ['Orders', stats.orders],
-                    ['To ship', stats.orders_to_ship],
-                    ['Low stock', stats.low_stock_variants],
-                    ['Returns', stats.return_requests],
-                ].map(([label, value]) => (
-                    <div key={label} className="status-stat">
-                        <strong>{value ?? 0}</strong>
-                        <span>{label}</span>
-                    </div>
-                ))}
-            </div>
-            <div className="quick-actions">
-                <button type="button" className="quick-action" onClick={() => navigate('/admin/commerce/products')}><span className="quick-action-icon">📦</span><span className="quick-action-label">Products</span></button>
-                <button type="button" className="quick-action" onClick={() => navigate('/admin/commerce/orders')}><span className="quick-action-icon">🧾</span><span className="quick-action-label">Orders</span></button>
-                <button type="button" className="quick-action" onClick={() => navigate('/admin/commerce/inventory')}><span className="quick-action-icon">📊</span><span className="quick-action-label">Inventory</span></button>
-                <button type="button" className="quick-action" onClick={() => navigate('/admin/commerce/settings')}><span className="quick-action-icon">⚙️</span><span className="quick-action-label">Settings</span></button>
-            </div>
-            <p style={{ marginTop: 16 }}><Link to="/admin">← Back to admin</Link></p>
+
+            <StatusStats items={statusItems} />
+
+            <section className="section">
+                <div className="section-header">
+                    <h2 className="section-title">Orders to ship</h2>
+                    <button type="button" className="btn btn-outline btn-sm" onClick={() => navigate('/admin/commerce/orders')}>
+                        View all
+                    </button>
+                </div>
+                {ordersToShip.length === 0 ? (
+                    <div className="empty-state"><p>No orders waiting to ship.</p></div>
+                ) : (
+                    <ul className="player-list">
+                        {ordersToShip.map((order) => (
+                            <li
+                                key={order.id}
+                                className="player-item"
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => navigate('/admin/commerce/orders')}
+                            >
+                                <span className="avatar sm">#</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <strong>{order.order_number || `Order #${order.id}`}</strong>
+                                    <p className="text-muted">{order.user?.name || 'Customer'}</p>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <strong>₹{formatMoney(order.total_amount)}</strong>
+                                    <div>
+                                        <span className="badge badge-warning">{order.status}</span>
+                                    </div>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </section>
+
+            <section className="section">
+                <div className="section-header">
+                    <h2 className="section-title">Low stock</h2>
+                    <button type="button" className="btn btn-outline btn-sm" onClick={() => navigate('/admin/commerce/inventory')}>
+                        View all
+                    </button>
+                </div>
+                {lowStockVariants.length === 0 ? (
+                    <div className="empty-state"><p>No low-stock variants.</p></div>
+                ) : (
+                    <ul className="player-list">
+                        {lowStockVariants.map((variant) => (
+                            <li
+                                key={variant.id}
+                                className="player-item"
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => navigate('/admin/commerce/inventory')}
+                            >
+                                <span className="avatar sm">📦</span>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <strong>{variantLabel(variant)}</strong>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <strong>{variant.available_quantity ?? 0}</strong>
+                                    <p className="text-muted" style={{ fontSize: 12, margin: 0 }}>available</p>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </section>
         </div>
     );
 }
